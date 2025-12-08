@@ -4,5 +4,30 @@
 data/
 config.yaml
 devcerts/
+
+# Build artifacts
 secretsync
 vss
+/vss
+/secretsync
+*.exe
+*.dll
+*.so
+*.dylib
+dist/
+build/
+
+# Test artifacts
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Temporary files
+tmp/
+*.tmp

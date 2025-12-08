@@ -2,6 +2,11 @@
 
 > **Universal Secrets Synchronization Pipeline**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/jbcom/secretsync.svg)](https://github.com/jbcom/secretsync/releases)
+[![Docker Image](https://img.shields.io/badge/docker-jbcom%2Fsecretsync-blue)](https://hub.docker.com/r/jbcom/secretsync)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jbcom/secretsync)](https://goreportcard.com/report/github.com/jbcom/secretsync)
+
 SecretSync provides fully automated, real-time secret synchronization across multiple cloud providers and secret stores. It supports a two-phase pipeline architecture (merge → sync) with inheritance, dynamic target discovery, and CI/CD-friendly diff reporting.
 
 ## Attribution
@@ -116,9 +121,39 @@ targets:
     account_id: "222222222222"
 ```
 
-## CI/CD Integration
+## GitHub Actions
 
-### GitHub Actions
+SecretSync is available as a GitHub Action for seamless CI/CD integration:
+
+```yaml
+- name: Sync Secrets
+  uses: jbcom/secretsync@v1
+  with:
+    config: config.yaml
+    dry-run: 'false'
+    output-format: 'github'
+  env:
+    VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
+    VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
+```
+
+**Key Features:**
+- 🔒 Native OIDC support for AWS authentication
+- 📊 GitHub-native diff annotations in PRs
+- 🎯 Exit codes for CI/CD control flow
+- 🔄 Automatic Docker multi-arch builds
+- ⚡ Zero configuration needed beyond config file
+
+**Quick Start:**
+1. Add `config.yaml` to your repository
+2. Configure AWS OIDC and Vault secrets
+3. Use the action in your workflow
+
+See [GitHub Actions documentation](./docs/GITHUB_ACTIONS.md) for complete usage guide and examples.
+
+## CI/CD Integration (CLI)
+
+### GitHub Actions (CLI)
 
 ```yaml
 - name: Validate secrets pipeline

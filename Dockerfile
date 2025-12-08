@@ -18,6 +18,9 @@ ENV CGO_ENABLED=${CGO_ENABLED} \
     GOTOOLCHAIN=auto
 WORKDIR /src
 
+# Update CA certificates
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
 COPY go.mod go.sum ./
 
 # Cache module and build downloads between runs
@@ -48,7 +51,7 @@ ENV SECRETSYNC_CONFIG=${SECRETSYNC_CONFIG} \
     SECRETSYNC_VERSION=${VERSION}
 
 LABEL org.opencontainers.image.title="secretsync" \
-      org.opencontainers.image.source="https://github.com/jbcom/jbcom-oss-ecosystem" \
+      org.opencontainers.image.source="https://github.com/jbcom/secretsync" \
       org.opencontainers.image.version=${VERSION}
 
 WORKDIR /app
@@ -59,6 +62,11 @@ COPY --from=builder /out/secretsync /usr/local/bin/secretsync
 # Keep vss as a symlink for backwards compatibility
 RUN ln -s /usr/local/bin/secretsync /usr/local/bin/vss
 
-USER 65532:65532
+# Copy entrypoint script for GitHub Actions
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/usr/local/bin/secretsync"]
+# Don't set USER here - GitHub Actions may need root access
+# The action will run with the default user
+
+ENTRYPOINT ["/entrypoint.sh"]

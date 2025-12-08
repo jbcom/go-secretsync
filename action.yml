@@ -1,0 +1,79 @@
+name: 'SecretSync'
+description: 'Universal secrets synchronization pipeline for multi-cloud secret management with Vault, AWS, GCP, and more'
+author: 'jbcom'
+
+branding:
+  icon: 'lock'
+  color: 'blue'
+
+inputs:
+  config:
+    description: 'Path to the SecretSync configuration file (YAML)'
+    required: false
+    default: 'config.yaml'
+  
+  targets:
+    description: 'Comma-separated list of targets to sync (leave empty for all targets)'
+    required: false
+    default: ''
+  
+  dry-run:
+    description: 'Run in dry-run mode (no changes will be made)'
+    required: false
+    default: 'false'
+  
+  merge-only:
+    description: 'Only run the merge phase (skip AWS sync)'
+    required: false
+    default: 'false'
+  
+  sync-only:
+    description: 'Only run the sync phase (skip merge)'
+    required: false
+    default: 'false'
+  
+  discover:
+    description: 'Enable dynamic target discovery from AWS Organizations/Identity Center'
+    required: false
+    default: 'false'
+  
+  output-format:
+    description: 'Output format for diff/results (human, json, github, compact)'
+    required: false
+    default: 'github'
+  
+  compute-diff:
+    description: 'Compute and show diff even when not in dry-run mode'
+    required: false
+    default: 'false'
+  
+  exit-code:
+    description: 'Use exit codes for CI/CD (0=no changes, 1=changes, 2=errors)'
+    required: false
+    default: 'false'
+  
+  log-level:
+    description: 'Log level (debug, info, warn, error)'
+    required: false
+    default: 'info'
+  
+  log-format:
+    description: 'Log format (text, json)'
+    required: false
+    default: 'text'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    INPUT_CONFIG: ${{ inputs.config }}
+    INPUT_TARGETS: ${{ inputs.targets }}
+    INPUT_DRY_RUN: ${{ inputs.dry-run }}
+    INPUT_MERGE_ONLY: ${{ inputs.merge-only }}
+    INPUT_SYNC_ONLY: ${{ inputs.sync-only }}
+    INPUT_DISCOVER: ${{ inputs.discover }}
+    INPUT_OUTPUT_FORMAT: ${{ inputs.output-format }}
+    INPUT_COMPUTE_DIFF: ${{ inputs.compute-diff }}
+    INPUT_EXIT_CODE: ${{ inputs.exit-code }}
+    INPUT_LOG_LEVEL: ${{ inputs.log-level }}
+    INPUT_LOG_FORMAT: ${{ inputs.log-format }}
