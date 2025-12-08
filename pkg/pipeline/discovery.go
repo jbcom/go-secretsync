@@ -15,9 +15,9 @@ import (
 
 // DiscoveryService handles dynamic target discovery from AWS services
 type DiscoveryService struct {
-	ctx     context.Context
-	awsCtx  *AWSExecutionContext
-	config  *Config
+	ctx    context.Context
+	awsCtx *AWSExecutionContext
+	config *Config
 }
 
 // NewDiscoveryService creates a new discovery service

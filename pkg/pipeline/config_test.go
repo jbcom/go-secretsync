@@ -91,7 +91,7 @@ pipeline:
 	assert.Equal(t, "debug", cfg.Log.Level)
 	assert.Equal(t, "https://vault.example.com/", cfg.Vault.Address)
 	assert.Equal(t, "eng/data-platform", cfg.Vault.Namespace)
-	
+
 	// Check env var expansion
 	assert.Equal(t, "test-role-id", cfg.Vault.Auth.AppRole.RoleID)
 	assert.Equal(t, "test-secret-id", cfg.Vault.Auth.AppRole.SecretID)
@@ -395,8 +395,8 @@ func TestIsInheritedTarget(t *testing.T) {
 		},
 	}
 
-	assert.False(t, cfg.IsInheritedTarget("Stg"))  // imports only source
-	assert.True(t, cfg.IsInheritedTarget("Prod"))  // imports another target
+	assert.False(t, cfg.IsInheritedTarget("Stg")) // imports only source
+	assert.True(t, cfg.IsInheritedTarget("Prod")) // imports another target
 }
 
 func TestGetSourcePath(t *testing.T) {
@@ -413,7 +413,7 @@ func TestGetSourcePath(t *testing.T) {
 
 	// Direct source
 	assert.Equal(t, "analytics", cfg.GetSourcePath("analytics"))
-	
+
 	// Inherited target
 	assert.Equal(t, "merged-secrets/Stg", cfg.GetSourcePath("Stg"))
 }

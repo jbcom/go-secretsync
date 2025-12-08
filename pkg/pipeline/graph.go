@@ -16,10 +16,10 @@ const (
 
 // Node represents a node in the dependency graph
 type Node struct {
-	Name     string
-	Type     NodeType
-	Level    int      // Dependency depth (0 = no dependencies)
-	Deps     []string // Nodes this depends on
+	Name       string
+	Type       NodeType
+	Level      int      // Dependency depth (0 = no dependencies)
+	Deps       []string // Nodes this depends on
 	DependedBy []string // Nodes that depend on this
 }
 
@@ -191,19 +191,19 @@ func (g *Graph) GroupByLevel() [][]string {
 // IncludeDependencies expands a list of targets to include their dependencies
 func (g *Graph) IncludeDependencies(targets []string) []string {
 	included := make(map[string]bool)
-	
+
 	var addDeps func(name string)
 	addDeps = func(name string) {
 		if included[name] {
 			return
 		}
 		included[name] = true
-		
+
 		node := g.Nodes[name]
 		if node == nil {
 			return
 		}
-		
+
 		for _, dep := range node.Deps {
 			// Only include target dependencies, not sources
 			if depNode := g.Nodes[dep]; depNode != nil && depNode.Type == NodeTypeTarget {
@@ -237,14 +237,14 @@ func (g *Graph) IncludeDependencies(targets []string) []string {
 // PrintGraph returns a visual representation of the graph
 func (g *Graph) PrintGraph() string {
 	levels := g.GroupByLevel()
-	
+
 	var sb strings.Builder
 	sb.WriteString("Dependency Graph:\n")
-	
+
 	for i, level := range levels {
 		sb.WriteString(fmt.Sprintf("  Level %d: %v\n", i, level))
 	}
-	
+
 	sb.WriteString("\nInheritance:\n")
 	order := g.TopologicalOrder()
 	for _, name := range order {
@@ -261,6 +261,6 @@ func (g *Graph) PrintGraph() string {
 			}
 		}
 	}
-	
+
 	return sb.String()
 }

@@ -203,13 +203,13 @@ func DefaultOptions() Options {
 
 // Result represents the outcome of a single target operation
 type Result struct {
-	Target    string        `json:"target"`
-	Phase     string        `json:"phase"` // "merge" or "sync"
-	Operation string        `json:"operation"`
-	Success   bool          `json:"success"`
-	Error     error         `json:"error,omitempty"`
-	Duration  time.Duration `json:"duration"`
-	Details   ResultDetails `json:"details,omitempty"`
+	Target    string           `json:"target"`
+	Phase     string           `json:"phase"` // "merge" or "sync"
+	Operation string           `json:"operation"`
+	Success   bool             `json:"success"`
+	Error     error            `json:"error,omitempty"`
+	Duration  time.Duration    `json:"duration"`
+	Details   ResultDetails    `json:"details,omitempty"`
 	Diff      *diff.TargetDiff `json:"diff,omitempty"`
 }
 

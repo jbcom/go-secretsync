@@ -15,14 +15,14 @@ import (
 
 // Config represents the unified pipeline configuration
 type Config struct {
-	Log        LogConfig        `mapstructure:"log" yaml:"log"`
-	Vault      VaultConfig      `mapstructure:"vault" yaml:"vault"`
-	AWS        AWSConfig        `mapstructure:"aws" yaml:"aws"`
-	Sources    map[string]Source `mapstructure:"sources" yaml:"sources"`
-	MergeStore MergeStoreConfig `mapstructure:"merge_store" yaml:"merge_store"`
-	Targets    map[string]Target `mapstructure:"targets" yaml:"targets"`
+	Log            LogConfig                `mapstructure:"log" yaml:"log"`
+	Vault          VaultConfig              `mapstructure:"vault" yaml:"vault"`
+	AWS            AWSConfig                `mapstructure:"aws" yaml:"aws"`
+	Sources        map[string]Source        `mapstructure:"sources" yaml:"sources"`
+	MergeStore     MergeStoreConfig         `mapstructure:"merge_store" yaml:"merge_store"`
+	Targets        map[string]Target        `mapstructure:"targets" yaml:"targets"`
 	DynamicTargets map[string]DynamicTarget `mapstructure:"dynamic_targets" yaml:"dynamic_targets"`
-	Pipeline   PipelineSettings `mapstructure:"pipeline" yaml:"pipeline"`
+	Pipeline       PipelineSettings         `mapstructure:"pipeline" yaml:"pipeline"`
 }
 
 // LogConfig controls logging behavior
@@ -65,11 +65,11 @@ type KubernetesAuth struct {
 
 // AWSConfig configures AWS with Control Tower / Organizations awareness
 type AWSConfig struct {
-	Region           string                  `mapstructure:"region" yaml:"region"`
-	ExecutionContext ExecutionContextConfig  `mapstructure:"execution_context" yaml:"execution_context"`
-	ControlTower     ControlTowerConfig      `mapstructure:"control_tower" yaml:"control_tower"`
-	Organizations    OrganizationsConfig     `mapstructure:"organizations" yaml:"organizations"`
-	IdentityCenter   IdentityCenterConfig    `mapstructure:"identity_center" yaml:"identity_center"`
+	Region           string                 `mapstructure:"region" yaml:"region"`
+	ExecutionContext ExecutionContextConfig `mapstructure:"execution_context" yaml:"execution_context"`
+	ControlTower     ControlTowerConfig     `mapstructure:"control_tower" yaml:"control_tower"`
+	Organizations    OrganizationsConfig    `mapstructure:"organizations" yaml:"organizations"`
+	IdentityCenter   IdentityCenterConfig   `mapstructure:"identity_center" yaml:"identity_center"`
 }
 
 // ExecutionContextType defines where the pipeline runs from
@@ -99,9 +99,9 @@ type DelegationConfig struct {
 
 // ControlTowerConfig configures AWS Control Tower integration
 type ControlTowerConfig struct {
-	Enabled        bool                   `mapstructure:"enabled" yaml:"enabled"`
-	ExecutionRole  ExecutionRoleConfig    `mapstructure:"execution_role" yaml:"execution_role"`
-	AccountFactory AccountFactoryConfig   `mapstructure:"account_factory" yaml:"account_factory"`
+	Enabled        bool                 `mapstructure:"enabled" yaml:"enabled"`
+	ExecutionRole  ExecutionRoleConfig  `mapstructure:"execution_role" yaml:"execution_role"`
+	AccountFactory AccountFactoryConfig `mapstructure:"account_factory" yaml:"account_factory"`
 }
 
 // ExecutionRoleConfig defines the cross-account execution role
@@ -119,15 +119,15 @@ type AccountFactoryConfig struct {
 
 // OrganizationsConfig configures AWS Organizations integration
 type OrganizationsConfig struct {
-	AutoDiscover bool              `mapstructure:"auto_discover" yaml:"auto_discover"`
-	RootID       string            `mapstructure:"root_id" yaml:"root_id"`
+	AutoDiscover bool                `mapstructure:"auto_discover" yaml:"auto_discover"`
+	RootID       string              `mapstructure:"root_id" yaml:"root_id"`
 	OUs          map[string]OUConfig `mapstructure:"ous" yaml:"ous"`
 }
 
 // OUConfig represents an Organizational Unit
 type OUConfig struct {
-	ID       string            `mapstructure:"id" yaml:"id"`
-	Accounts []string          `mapstructure:"accounts" yaml:"accounts"`
+	ID       string              `mapstructure:"id" yaml:"id"`
+	Accounts []string            `mapstructure:"accounts" yaml:"accounts"`
 	Children map[string]OUConfig `mapstructure:"children" yaml:"children"`
 }
 
@@ -174,9 +174,9 @@ type MergeStoreVault struct {
 
 // MergeStoreS3 uses S3 as the merge store
 type MergeStoreS3 struct {
-	Bucket    string `mapstructure:"bucket" yaml:"bucket"`
-	Prefix    string `mapstructure:"prefix" yaml:"prefix"`
-	KMSKeyID  string `mapstructure:"kms_key_id" yaml:"kms_key_id"`
+	Bucket   string `mapstructure:"bucket" yaml:"bucket"`
+	Prefix   string `mapstructure:"prefix" yaml:"prefix"`
+	KMSKeyID string `mapstructure:"kms_key_id" yaml:"kms_key_id"`
 }
 
 // Target defines a sync destination.
@@ -223,7 +223,7 @@ type DynamicTarget struct {
 	Discovery DiscoveryConfig `mapstructure:"discovery" yaml:"discovery"`
 	Imports   []string        `mapstructure:"imports" yaml:"imports"`
 	Exclude   []string        `mapstructure:"exclude" yaml:"exclude"`
-	
+
 	// All static target options are also available for dynamic targets
 	Region       string `mapstructure:"region" yaml:"region"`
 	SecretPrefix string `mapstructure:"secret_prefix" yaml:"secret_prefix"`
@@ -299,7 +299,7 @@ func LoadConfig(path string) (*Config, error) {
 	v.SetEnvPrefix("VSS")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
-	
+
 	// Override from environment if set
 	if v.IsSet("log.level") {
 		cfg.Log.Level = v.GetString("log.level")

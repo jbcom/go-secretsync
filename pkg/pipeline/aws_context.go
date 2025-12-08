@@ -3,17 +3,17 @@
 // AWS Organizations supports two primary patterns for cross-account operations:
 //
 // 1. MANAGEMENT ACCOUNT: The root account that owns the AWS Organization
-//    - Has implicit trust from OrganizationAccountAccessRole in all member accounts
-//    - Can assume AWSControlTowerExecution in Control Tower enrolled accounts
-//    - Full Organizations API access
-//    - Full Identity Center admin access
-//    - NOT recommended for production workloads (security best practice)
+//   - Has implicit trust from OrganizationAccountAccessRole in all member accounts
+//   - Can assume AWSControlTowerExecution in Control Tower enrolled accounts
+//   - Full Organizations API access
+//   - Full Identity Center admin access
+//   - NOT recommended for production workloads (security best practice)
 //
 // 2. DELEGATED ADMINISTRATOR: A member account with delegated permissions
-//    - Requires explicit delegation via Organizations RegisterDelegatedAdministrator
-//    - Can be delegated for specific services (SSO, CloudFormation StackSets, etc.)
-//    - More secure - separates admin workloads from org management
-//    - Requires custom cross-account role deployment (StackSets, AFT, etc.)
+//   - Requires explicit delegation via Organizations RegisterDelegatedAdministrator
+//   - Can be delegated for specific services (SSO, CloudFormation StackSets, etc.)
+//   - More secure - separates admin workloads from org management
+//   - Requires custom cross-account role deployment (StackSets, AFT, etc.)
 //
 // This package handles both patterns and provides a unified interface for
 // cross-account secrets synchronization.
@@ -21,6 +21,7 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssoadmin"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/smithy-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,12 +42,12 @@ type AWSExecutionContext struct {
 	BaseConfig       aws.Config
 	CallerIdentity   *CallerIdentity
 	OrganizationInfo *OrganizationInfo
-	
+
 	// Cached clients
-	stsClient  *sts.Client
-	orgClient  *organizations.Client
-	ssoClient  *ssoadmin.Client
-	ssmClient  *ssm.Client
+	stsClient *sts.Client
+	orgClient *organizations.Client
+	ssoClient *ssoadmin.Client
+	ssmClient *ssm.Client
 }
 
 // CallerIdentity contains AWS STS GetCallerIdentity information
@@ -57,9 +59,9 @@ type CallerIdentity struct {
 
 // OrganizationInfo contains AWS Organizations information
 type OrganizationInfo struct {
-	ID                string
-	MasterAccountID   string
-	MasterAccountARN  string
+	ID                  string
+	MasterAccountID     string
+	MasterAccountARN    string
 	IsManagementAccount bool
 	IsDelegatedAdmin    bool
 	DelegatedServices   []string
@@ -182,9 +184,9 @@ func (ec *AWSExecutionContext) discoverOrganizationContext(ctx context.Context) 
 func (ec *AWSExecutionContext) discoverDelegatedServices(ctx context.Context) error {
 	// This requires calling from an account that can list delegated admins
 	// In practice, this might fail if we're not management account
-	
+
 	paginator := organizations.NewListDelegatedAdministratorsPaginator(ec.orgClient, &organizations.ListDelegatedAdministratorsInput{})
-	
+
 	for paginator.HasMorePages() {
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
@@ -314,7 +316,7 @@ func (ec *AWSExecutionContext) GetRoleARN(accountID string) string {
 // AssumeRoleConfig returns AWS config with assumed role credentials
 func (ec *AWSExecutionContext) AssumeRoleConfig(ctx context.Context, accountID string) (aws.Config, error) {
 	roleARN := ec.GetRoleARN(accountID)
-	
+
 	// No role assumption needed for same account
 	if roleARN == "" {
 		return ec.BaseConfig, nil
@@ -395,7 +397,7 @@ func (ec *AWSExecutionContext) GetIdentityCenterClient(ctx context.Context) (*ss
 	return ec.ssoClient, nil
 }
 
-// ListOrganizationAccounts returns all accounts in the organization
+// ListOrganizationAccounts returns all accounts in the organization with tags
 func (ec *AWSExecutionContext) ListOrganizationAccounts(ctx context.Context) ([]AccountInfo, error) {
 	if !ec.CanAccessOrganizations() {
 		return nil, fmt.Errorf("no access to Organizations API from this execution context")
@@ -411,11 +413,14 @@ func (ec *AWSExecutionContext) ListOrganizationAccounts(ctx context.Context) ([]
 		}
 
 		for _, acct := range output.Accounts {
+			accountID := aws.ToString(acct.Id)
+
 			accounts = append(accounts, AccountInfo{
-				ID:     aws.ToString(acct.Id),
+				ID:     accountID,
 				Name:   aws.ToString(acct.Name),
 				Email:  aws.ToString(acct.Email),
 				Status: string(acct.Status),
+				Tags:   ec.getAccountTagsSafely(ctx, accountID),
 			})
 		}
 	}
@@ -423,7 +428,7 @@ func (ec *AWSExecutionContext) ListOrganizationAccounts(ctx context.Context) ([]
 	return accounts, nil
 }
 
-// ListAccountsInOU returns accounts in a specific Organizational Unit
+// ListAccountsInOU returns accounts in a specific Organizational Unit with tags
 func (ec *AWSExecutionContext) ListAccountsInOU(ctx context.Context, ouID string) ([]AccountInfo, error) {
 	if !ec.CanAccessOrganizations() {
 		return nil, fmt.Errorf("no access to Organizations API from this execution context")
@@ -441,11 +446,14 @@ func (ec *AWSExecutionContext) ListAccountsInOU(ctx context.Context, ouID string
 		}
 
 		for _, acct := range output.Accounts {
+			accountID := aws.ToString(acct.Id)
+
 			accounts = append(accounts, AccountInfo{
-				ID:     aws.ToString(acct.Id),
+				ID:     accountID,
 				Name:   aws.ToString(acct.Name),
 				Email:  aws.ToString(acct.Email),
 				Status: string(acct.Status),
+				Tags:   ec.getAccountTagsSafely(ctx, accountID),
 			})
 		}
 	}
@@ -476,6 +484,75 @@ func (ec *AWSExecutionContext) ListChildOUs(ctx context.Context, parentID string
 	}
 
 	return childOUs, nil
+}
+
+// GetAccountTags retrieves tags for an AWS account
+//
+// Performance Note: This method makes an API call for each account.
+// For large organizations with many accounts (100+), consider:
+//   - Limiting discovery scope using OU filters
+//   - Using tag filtering only when necessary
+//   - Monitoring AWS API rate limits (Organizations API throttles at 20 TPS)
+//
+// Future optimization: Implement batch tag fetching or caching if needed
+func (ec *AWSExecutionContext) GetAccountTags(ctx context.Context, accountID string) (map[string]string, error) {
+	if !ec.CanAccessOrganizations() {
+		return nil, fmt.Errorf("no access to Organizations API from this execution context")
+	}
+
+	tags := make(map[string]string)
+	paginator := organizations.NewListTagsForResourcePaginator(ec.orgClient, &organizations.ListTagsForResourceInput{
+		ResourceId: aws.String(accountID),
+	})
+
+	for paginator.HasMorePages() {
+		output, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list tags for account %s: %w", accountID, err)
+		}
+
+		for _, tag := range output.Tags {
+			tags[aws.ToString(tag.Key)] = aws.ToString(tag.Value)
+		}
+	}
+
+	return tags, nil
+}
+
+// getAccountTagsSafely retrieves tags for an account with error handling
+// Returns empty map on error but logs appropriately based on error type
+func (ec *AWSExecutionContext) getAccountTagsSafely(ctx context.Context, accountID string) map[string]string {
+	tags, err := ec.GetAccountTags(ctx, accountID)
+	if err != nil {
+		// Use AWS SDK error types for more robust error classification
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			errorCode := apiErr.ErrorCode()
+
+			// Check for permission-related errors (expected in some contexts)
+			switch errorCode {
+			case "AccessDeniedException", "AccessDenied", "UnauthorizedOperation":
+				log.WithFields(log.Fields{
+					"accountID": accountID,
+					"errorCode": errorCode,
+				}).Debug("No permission to get account tags, continuing without tags")
+			default:
+				// Other API errors might indicate a more serious problem
+				log.WithFields(log.Fields{
+					"accountID": accountID,
+					"errorCode": errorCode,
+				}).Warn("Failed to get account tags")
+			}
+		} else if strings.Contains(err.Error(), "no access to Organizations") {
+			// Context doesn't have Organizations access
+			log.WithError(err).WithField("accountID", accountID).Debug("No Organizations access, continuing without tags")
+		} else {
+			// Non-API errors
+			log.WithError(err).WithField("accountID", accountID).Warn("Failed to get account tags")
+		}
+		return make(map[string]string)
+	}
+	return tags
 }
 
 // AccountInfo contains basic AWS account information

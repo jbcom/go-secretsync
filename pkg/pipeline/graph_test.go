@@ -110,7 +110,7 @@ func TestTopologicalOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	order := graph.TopologicalOrder()
-	
+
 	// Check that we have all targets
 	assert.Len(t, order, 4)
 
@@ -122,13 +122,13 @@ func TestTopologicalOrder(t *testing.T) {
 
 	// Stg must come before Prod
 	assert.Less(t, stgIdx, prodIdx, "Serverless_Stg must come before Serverless_Prod")
-	
+
 	// Prod must come before demos
 	assert.Less(t, prodIdx, demoIdx, "Serverless_Prod must come before livequery_demos")
-	
+
 	// Testbed has no dependency on Stg/Prod chain, but should be at same level as Stg
 	assert.Equal(t, graph.Nodes["Serverless_Stg"].Level, graph.Nodes["Analytics_Testbed"].Level)
-	
+
 	// Both should come before Prod
 	assert.Less(t, testbedIdx, prodIdx)
 }
