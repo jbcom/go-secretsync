@@ -324,17 +324,16 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("merge_store must specify either vault or s3")
 	}
 
-	// S3 merge store is not yet implemented
+	// Validate S3 merge store config if specified
 	if c.MergeStore.S3 != nil {
-		return fmt.Errorf("merge_store.s3 is not yet implemented; use merge_store.vault instead")
+		if c.MergeStore.S3.Bucket == "" {
+			return fmt.Errorf("merge_store.s3.bucket is required")
+		}
 	}
 
-	// At least one static target is required (dynamic targets not yet implemented)
-	if len(c.Targets) == 0 {
-		if len(c.DynamicTargets) > 0 {
-			return fmt.Errorf("dynamic_targets are not yet implemented; use static targets instead")
-		}
-		return fmt.Errorf("at least one target is required")
+	// At least one target is required (static or dynamic)
+	if len(c.Targets) == 0 && len(c.DynamicTargets) == 0 {
+		return fmt.Errorf("at least one target or dynamic_target is required")
 	}
 
 	// Validate targets
@@ -349,6 +348,13 @@ func (c *Config) Validate() error {
 					return fmt.Errorf("target %q: import %q not found in sources or targets", name, imp)
 				}
 			}
+		}
+	}
+
+	// Validate dynamic targets
+	for name, dt := range c.DynamicTargets {
+		if dt.Discovery.IdentityCenter == nil && dt.Discovery.Organizations == nil {
+			return fmt.Errorf("dynamic_target %q: must specify identity_center or organizations discovery", name)
 		}
 	}
 

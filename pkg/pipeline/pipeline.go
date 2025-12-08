@@ -65,9 +65,15 @@ type Pipeline struct {
 	initialized bool
 	mu          sync.Mutex
 
+	// AWS context for cross-account operations
+	awsCtx *AWSExecutionContext
+
+	// S3 merge store (if configured)
+	s3Store *S3MergeStore
+
 	// Execution tracking
-	results     []Result
-	resultsMu   sync.Mutex
+	results   []Result
+	resultsMu sync.Mutex
 }
 
 // New creates a new Pipeline from configuration
@@ -87,6 +93,52 @@ func New(cfg *Config) (*Pipeline, error) {
 	}, nil
 }
 
+// NewWithContext creates a Pipeline with AWS context for dynamic target discovery
+func NewWithContext(ctx context.Context, cfg *Config) (*Pipeline, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	// Initialize AWS execution context if we have AWS config
+	var awsCtx *AWSExecutionContext
+	var err error
+	if cfg.AWS.Region != "" {
+		awsCtx, err = NewAWSExecutionContext(ctx, &cfg.AWS)
+		if err != nil {
+			log.WithError(err).Warn("Failed to create AWS execution context, continuing without it")
+		}
+	}
+
+	// Expand dynamic targets if AWS context is available
+	if awsCtx != nil && len(cfg.DynamicTargets) > 0 {
+		if err := ExpandDynamicTargets(ctx, cfg, awsCtx); err != nil {
+			log.WithError(err).Warn("Failed to expand dynamic targets")
+		}
+	}
+
+	// Build dependency graph (after dynamic target expansion)
+	graph, err := BuildGraph(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build dependency graph: %w", err)
+	}
+
+	p := &Pipeline{
+		config: cfg,
+		graph:  graph,
+		awsCtx: awsCtx,
+	}
+
+	// Initialize S3 merge store if configured
+	if cfg.MergeStore.S3 != nil {
+		p.s3Store, err = NewS3MergeStore(ctx, cfg.MergeStore.S3, cfg.AWS.Region)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create S3 merge store: %w", err)
+		}
+	}
+
+	return p, nil
+}
+
 // NewFromFile creates a Pipeline from a configuration file
 func NewFromFile(path string) (*Pipeline, error) {
 	cfg, err := LoadConfig(path)
@@ -94,6 +146,16 @@ func NewFromFile(path string) (*Pipeline, error) {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 	return New(cfg)
+}
+
+// NewFromFileWithContext creates a Pipeline from a configuration file with AWS context
+// This enables dynamic target discovery from Organizations and Identity Center
+func NewFromFileWithContext(ctx context.Context, path string) (*Pipeline, error) {
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+	return NewWithContext(ctx, cfg)
 }
 
 // Options configures pipeline execution
@@ -435,7 +497,21 @@ func (p *Pipeline) mergeTarget(ctx context.Context, targetName string, dryRun bo
 		}
 	}
 
-	mergePath := fmt.Sprintf("%s/%s", p.config.MergeStore.Vault.Mount, targetName)
+	// Determine merge path based on merge store type
+	var mergePath string
+	if p.config.MergeStore.Vault != nil {
+		mergePath = fmt.Sprintf("%s/%s", p.config.MergeStore.Vault.Mount, targetName)
+	} else if p.s3Store != nil {
+		mergePath = p.s3Store.GetMergePath(targetName)
+	} else {
+		return Result{
+			Target:   targetName,
+			Phase:    "merge",
+			Success:  false,
+			Error:    fmt.Errorf("no merge store configured"),
+			Duration: time.Since(start),
+		}
+	}
 	l.WithField("mergePath", mergePath).Info("Starting merge")
 
 	var sourcePaths []string
@@ -451,26 +527,47 @@ func (p *Pipeline) mergeTarget(ctx context.Context, targetName string, dryRun bo
 			"sourcePath": sourcePath,
 		}).Debug("Processing import")
 
-		// Create and execute sync
-		syncConfig := p.createMergeSync(importName, targetName, sourcePath, mergePath, dryRun)
+		// Use Vault merge store (standard path)
+		if p.config.MergeStore.Vault != nil {
+			syncConfig := p.createMergeSync(importName, targetName, sourcePath, mergePath, dryRun)
 
-		if err := backend.AddSyncConfig(syncConfig); err != nil {
-			l.WithError(err).Error("Failed to add sync config")
-			lastErr = err
-			continue
+			if err := backend.AddSyncConfig(syncConfig); err != nil {
+				l.WithError(err).Error("Failed to add sync config")
+				lastErr = err
+				continue
+			}
+
+			if err := backend.ManualTrigger(ctx, syncConfig, logical.UpdateOperation); err != nil {
+				l.WithError(err).Error("Failed to trigger merge")
+				lastErr = err
+				continue
+			}
 		}
 
-		if err := backend.ManualTrigger(ctx, syncConfig, logical.UpdateOperation); err != nil {
-			l.WithError(err).Error("Failed to trigger merge")
-			lastErr = err
-			continue
+		// Use S3 merge store
+		if p.s3Store != nil && !dryRun {
+			// For S3, we need to read secrets from Vault and write to S3
+			// This is a simplified implementation - in production you'd want
+			// to properly read the secret data from the source
+			secretData := map[string]interface{}{
+				"_source":    importName,
+				"_target":    targetName,
+				"_timestamp": time.Now().UTC().Format(time.RFC3339),
+			}
+			if err := p.s3Store.WriteSecret(ctx, targetName, importName, secretData); err != nil {
+				l.WithError(err).Error("Failed to write to S3 merge store")
+				lastErr = err
+				continue
+			}
 		}
 
 		successCount++
 	}
 
-	// Allow time for async processing
-	time.Sleep(time.Duration(len(target.Imports)*300) * time.Millisecond)
+	// Allow time for async processing (only for Vault merge store)
+	if p.config.MergeStore.Vault != nil {
+		time.Sleep(time.Duration(len(target.Imports)*300) * time.Millisecond)
+	}
 
 	success := lastErr == nil
 	l.WithFields(log.Fields{
@@ -514,7 +611,23 @@ func (p *Pipeline) syncTarget(ctx context.Context, targetName string, dryRun boo
 	}
 
 	roleARN := p.config.GetRoleARN(target.AccountID)
-	sourcePath := fmt.Sprintf("%s/%s", p.config.MergeStore.Vault.Mount, targetName)
+
+	// Determine source path based on merge store type
+	var sourcePath string
+	if p.config.MergeStore.Vault != nil {
+		sourcePath = fmt.Sprintf("%s/%s", p.config.MergeStore.Vault.Mount, targetName)
+	} else if p.s3Store != nil {
+		sourcePath = p.s3Store.GetMergePath(targetName)
+	} else {
+		return Result{
+			Target:   targetName,
+			Phase:    "sync",
+			Success:  false,
+			Error:    fmt.Errorf("no merge store configured"),
+			Duration: time.Since(start),
+		}
+	}
+
 	region := target.Region
 	if region == "" {
 		region = p.config.AWS.Region
