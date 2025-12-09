@@ -571,10 +571,20 @@ func (vc *VaultClient) listPathContents(ctx context.Context, metadataPath string
 	if secret.Data == nil || secret.Data["keys"] == nil {
 		return nil, nil
 	}
-	k := secret.Data["keys"].([]interface{})
+	
+	// Type-safe extraction of keys
+	keysInterface, ok := secret.Data["keys"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected keys type in Vault response: %T", secret.Data["keys"])
+	}
+	
 	var keys []string
-	for _, v := range k {
-		keys = append(keys, v.(string))
+	for i, v := range keysInterface {
+		keyStr, ok := v.(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected key type at index %d: %T", i, v)
+		}
+		keys = append(keys, keyStr)
 	}
 	return keys, nil
 }
