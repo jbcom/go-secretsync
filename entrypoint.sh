@@ -1,68 +1,62 @@
 #!/bin/sh
-# Entrypoint script for SecretSync GitHub Action
-# This script builds the command line from inputs and handles optional flags
+# Entrypoint for SecretSync
+# All configuration via environment variables - no action inputs needed
+# This makes it work identically in GitHub Actions, GitLab CI, or local Docker
 
 set -e
 
-# Start building the command with base
+# Build command from environment variables
 CMD="secretsync pipeline"
 
-# Add config (always required)
-if [ -n "$INPUT_CONFIG" ]; then
-    CMD="$CMD --config \"$INPUT_CONFIG\""
+# Config file (required)
+CONFIG="${SECRETSYNC_CONFIG:-config.yaml}"
+CMD="$CMD --config \"$CONFIG\""
+
+# Optional: specific targets
+if [ -n "$SECRETSYNC_TARGETS" ]; then
+    CMD="$CMD --targets \"$SECRETSYNC_TARGETS\""
 fi
 
-# Add optional targets
-if [ -n "$INPUT_TARGETS" ]; then
-    CMD="$CMD --targets \"$INPUT_TARGETS\""
-fi
-
-# Add boolean flags
-if [ "$INPUT_DRY_RUN" = "true" ]; then
+# Boolean flags
+if [ "$SECRETSYNC_DRY_RUN" = "true" ]; then
     CMD="$CMD --dry-run"
 fi
 
-if [ "$INPUT_MERGE_ONLY" = "true" ]; then
+if [ "$SECRETSYNC_MERGE_ONLY" = "true" ]; then
     CMD="$CMD --merge-only"
 fi
 
-if [ "$INPUT_SYNC_ONLY" = "true" ]; then
+if [ "$SECRETSYNC_SYNC_ONLY" = "true" ]; then
     CMD="$CMD --sync-only"
 fi
 
-if [ "$INPUT_DISCOVER" = "true" ]; then
+if [ "$SECRETSYNC_DISCOVER" = "true" ]; then
     CMD="$CMD --discover"
 fi
 
-# Add output format (always present)
-if [ -n "$INPUT_OUTPUT_FORMAT" ]; then
-    CMD="$CMD --output \"$INPUT_OUTPUT_FORMAT\""
-fi
-
-# Add diff flag
-if [ "$INPUT_COMPUTE_DIFF" = "true" ]; then
+if [ "$SECRETSYNC_DIFF" = "true" ]; then
     CMD="$CMD --diff"
 fi
 
-# Add exit-code flag
-if [ "$INPUT_EXIT_CODE" = "true" ]; then
+if [ "$SECRETSYNC_EXIT_CODE" = "true" ]; then
     CMD="$CMD --exit-code"
 fi
 
-# Add log level (always present)
-if [ -n "$INPUT_LOG_LEVEL" ]; then
-    CMD="$CMD --log-level \"$INPUT_LOG_LEVEL\""
-fi
+# Output format (default: github for Actions, human otherwise)
+OUTPUT="${SECRETSYNC_OUTPUT:-github}"
+CMD="$CMD --output \"$OUTPUT\""
 
-# Add log format (always present)
-if [ -n "$INPUT_LOG_FORMAT" ]; then
-    CMD="$CMD --log-format \"$INPUT_LOG_FORMAT\""
-fi
+# Logging
+LOG_LEVEL="${SECRETSYNC_LOG_LEVEL:-info}"
+CMD="$CMD --log-level \"$LOG_LEVEL\""
 
-# Debug: Print the command if log level is debug
-if [ "$INPUT_LOG_LEVEL" = "debug" ]; then
+LOG_FORMAT="${SECRETSYNC_LOG_FORMAT:-text}"
+CMD="$CMD --log-format \"$LOG_FORMAT\""
+
+# Debug mode - print command
+if [ "$LOG_LEVEL" = "debug" ] || [ "$SECRETSYNC_DEBUG" = "true" ]; then
     echo "Executing: $CMD"
 fi
 
-# Execute the command using eval to properly handle quoted arguments
-eval exec "$CMD"
+# Execute
+eval exec $CMD

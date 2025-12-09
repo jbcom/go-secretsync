@@ -4,7 +4,7 @@ author: "jbcom"
 description: "Sync secrets from HashiCorp Vault to AWS Secrets Manager across multiple accounts"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/jbcom/secretsync:v1" # x-release-please-version
+  image: "docker://jbcom/secretsync:v1" # x-release-please-version
 branding:
   icon: "lock"
   color: "blue"
