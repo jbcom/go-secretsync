@@ -3,12 +3,10 @@ package vault
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/jbcom/secretsync/pkg/driver"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -765,13 +763,7 @@ func TestVaultClient_ListSecretsRecursive(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock client
-			mockClient, err := api.NewClient(&api.Config{
-				Address: "http://localhost:8200",
-			})
-			require.NoError(t, err)
-
-			// Create mock logical backend
+			// Create mock logical client with test responses
 			mockLogical := &mockLogical{
 				listWithContextFunc: func(ctx context.Context, path string) (*api.Secret, error) {
 					if response, exists := tt.mockResponses[path]; exists {
@@ -781,19 +773,15 @@ func TestVaultClient_ListSecretsRecursive(t *testing.T) {
 				},
 			}
 
-			// Replace the logical backend with our mock
-			// Note: This is a simplified approach for testing
+			// Inject the mock logical client into the VaultClient
 			client := &VaultClient{
 				Address: "http://localhost:8200",
-				Client:  mockClient,
 			}
+			client.SetLogicalClient(mockLogical)
 
-			// Mock the Client.Logical() method by creating a custom implementation
-			// In a real scenario, we'd use a more sophisticated mocking framework
+			// Call the actual production listSecretsRecursive function
 			ctx := context.Background()
-			
-			// Test the recursive listing logic directly
-			result, err := client.listSecretsRecursiveWithMock(ctx, tt.basePath, mockLogical)
+			result, err := client.listSecretsRecursive(ctx, tt.basePath)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -806,95 +794,6 @@ func TestVaultClient_ListSecretsRecursive(t *testing.T) {
 			}
 		})
 	}
-}
-
-// listSecretsRecursiveWithMock is a test helper that allows injecting a mock logical client
-func (vc *VaultClient) listSecretsRecursiveWithMock(ctx context.Context, basePath string, mockLogical *mockLogical) ([]string, error) {
-	l := log.WithFields(log.Fields{
-		"address": vc.Address,
-		"role":    vc.Role,
-		"path":    basePath,
-		"method":  vc.AuthMethod,
-	})
-	l.Debug("vault.ListSecretsRecursive")
-	
-	var allSecrets []string
-	visited := make(map[string]bool)
-	queue := []string{basePath}
-	
-	for len(queue) > 0 {
-		currentPath := queue[0]
-		queue = queue[1:]
-		
-		// Skip if already visited to prevent infinite loops
-		if visited[currentPath] {
-			continue
-		}
-		visited[currentPath] = true
-		
-		// Get the metadata path for listing
-		metadataPath, err := vc.getMetadataPath(currentPath)
-		if err != nil {
-			l.WithError(err).Warnf("Failed to get metadata path for %s", currentPath)
-			continue
-		}
-		
-		// List contents at current path using mock
-		keys, err := vc.listPathContentsWithMock(ctx, metadataPath, mockLogical)
-		if err != nil {
-			l.WithError(err).Warnf("Failed to list contents at %s", metadataPath)
-			continue
-		}
-		
-		if keys == nil {
-			continue
-		}
-		
-		// Process each key found
-		for _, key := range keys {
-			// Construct the full path maintaining original format
-			var fullPath string
-			if strings.HasSuffix(currentPath, "/") {
-				fullPath = currentPath + key
-			} else {
-				fullPath = currentPath + "/" + key
-			}
-			
-			if strings.HasSuffix(key, "/") {
-				// It's a directory - add to queue for recursive exploration
-				// Remove trailing slash for consistent path handling
-				dirPath := strings.TrimSuffix(fullPath, "/")
-				if !visited[dirPath] {
-					queue = append(queue, dirPath)
-				}
-			} else {
-				// It's a secret - add to results
-				allSecrets = append(allSecrets, fullPath)
-			}
-		}
-	}
-	
-	return allSecrets, nil
-}
-
-// listPathContentsWithMock is a test helper for mocking Vault LIST operations
-func (vc *VaultClient) listPathContentsWithMock(ctx context.Context, metadataPath string, mockLogical *mockLogical) ([]string, error) {
-	secret, err := mockLogical.ListWithContext(ctx, metadataPath)
-	if err != nil {
-		return nil, err
-	}
-	if secret == nil {
-		return nil, nil
-	}
-	if secret.Data == nil || secret.Data["keys"] == nil {
-		return nil, nil
-	}
-	k := secret.Data["keys"].([]interface{})
-	var keys []string
-	for _, v := range k {
-		keys = append(keys, v.(string))
-	}
-	return keys, nil
 }
 
 func TestVaultClient_GetMetadataPath(t *testing.T) {
