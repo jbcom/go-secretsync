@@ -71,10 +71,13 @@ jobs:
 
       - name: Run tests
         env:
+          # LocalStack test credentials - NOT for production use
           AWS_ENDPOINT_URL: http://localhost:4566
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
           AWS_REGION: us-east-1
+          # Vault dev mode token - NOT for production use
+          # Production workflows MUST use GitHub secrets for credentials
           VAULT_ADDR: http://localhost:8200
           VAULT_TOKEN: test-root-token
         run: go test -v -race -coverprofile=coverage.out ./...

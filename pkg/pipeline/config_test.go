@@ -640,4 +640,47 @@ func TestTargetInheritance(t *testing.T) {
 		assert.True(t, cfg.IsInheritedTarget("Prod"))
 		assert.False(t, cfg.IsInheritedTarget("Stg"))
 	})
+
+	t.Run("Circular dependency detection", func(t *testing.T) {
+		cfg := Config{
+			Targets: map[string]Target{
+				"A": {AccountID: "111111111111", Imports: []string{"B"}},
+				"B": {AccountID: "222222222222", Imports: []string{"A"}},
+			},
+		}
+
+		err := cfg.ValidateTargetInheritance()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "circular")
+	})
+
+	t.Run("Valid inheritance chain passes validation", func(t *testing.T) {
+		cfg := Config{
+			Sources: map[string]Source{
+				"base": {Vault: &VaultSource{Mount: "kv/base"}},
+			},
+			Targets: map[string]Target{
+				"Stg":  {AccountID: "111111111111", Imports: []string{"base"}},
+				"Prod": {AccountID: "222222222222", Imports: []string{"Stg"}},
+				"Demo": {AccountID: "333333333333", Imports: []string{"Prod"}},
+			},
+		}
+
+		err := cfg.ValidateTargetInheritance()
+		assert.NoError(t, err)
+	})
+
+	t.Run("Three-way circular dependency detection", func(t *testing.T) {
+		cfg := Config{
+			Targets: map[string]Target{
+				"A": {AccountID: "111111111111", Imports: []string{"B"}},
+				"B": {AccountID: "222222222222", Imports: []string{"C"}},
+				"C": {AccountID: "333333333333", Imports: []string{"A"}},
+			},
+		}
+
+		err := cfg.ValidateTargetInheritance()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "circular")
+	})
 }

@@ -539,6 +539,12 @@ func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string
 
 		// Process each key found
 		for _, key := range keys {
+			// Validate key doesn't contain path traversal sequences
+			if strings.Contains(key, "..") {
+				l.Warnf("Skipping key with path traversal sequence: %s", key)
+				continue
+			}
+
 			// Construct the full path maintaining original format
 			var fullPath string
 			if strings.HasSuffix(currentPath, "/") {
