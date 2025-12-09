@@ -4,6 +4,13 @@ FROM golang:1.25.5-trixie
 WORKDIR /workspace
 
 # =============================================================================
+# SHELL CONFIGURATION
+# =============================================================================
+# Define stub for dump_bash_state to prevent "command not found" noise
+# See: https://www.commandlinefu.com/commands/view/11427
+RUN echo 'dump_bash_state() { :; }' >> /etc/bash.bashrc
+
+# =============================================================================
 # SYSTEM DEPENDENCIES
 # =============================================================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
