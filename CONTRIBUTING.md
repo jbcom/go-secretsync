@@ -203,7 +203,7 @@ func TestMyFunction(t *testing.T) {
 
 ```
 secretsync/
-├── cmd/vss/           # CLI application
+├── cmd/secretsync/           # CLI application
 │   ├── cmd/           # Cobra commands
 │   └── main.go        # Entry point
 ├── pkg/               # Public packages

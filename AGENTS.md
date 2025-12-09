@@ -1,4 +1,4 @@
-# Agent Instructions for vault-secret-sync
+# Agent Instructions for secretsync
 
 ## Overview
 
@@ -33,7 +33,7 @@ go run cmd/secretsync/main.go
 
 ```bash
 # Build image
-docker build -t vault-secret-sync .
+docker build -t secretsync .
 
 # Run with docker-compose
 docker-compose up
@@ -43,7 +43,7 @@ docker-compose up
 
 ```bash
 # Deploy with Helm
-helm upgrade --install vault-secret-sync deploy/charts/vault-secret-sync
+helm upgrade --install secretsync deploy/charts/secretsync
 ```
 
 ## Architecture

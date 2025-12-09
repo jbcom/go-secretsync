@@ -39,7 +39,7 @@ Fields not required in your environment can be omitted. For example, if you are 
 
 ### `operator` Configuration
 
-The operator is responsible for reconciling the `VaultSecretSync` CRD and handling sync operations. Here's an example of a minimal configuration file:
+The operator is responsible for reconciling the `SecretSync` CRD and handling sync operations. Here's an example of a minimal configuration file:
 
 ```yaml
 operator:
@@ -83,7 +83,7 @@ Note that the metrics endpoint also supports `security.tls` configuration, it ha
 
 ### `stores` Configuration
 
-Each `VaultSecretSync` configuration is entirely self-contained - the `spec` contains all the fields necessary to perform the sync. However you can use the `stores` configuration to set defaults for all `VaultSecretSync` resources. This is useful if you have multiple `VaultSecretSync` resources that share the same configuration. Here's an example of a minimal configuration file:
+Each `SecretSync` configuration is entirely self-contained - the `spec` contains all the fields necessary to perform the sync. However you can use the `stores` configuration to set defaults for all `SecretSync` resources. This is useful if you have multiple `SecretSync` resources that share the same configuration. Here's an example of a minimal configuration file:
 
 ```yaml
 stores:
@@ -94,7 +94,7 @@ stores:
     owner: "example-org"
 ```
 
-Fields explictly defined in the `VaultSecretSync` resource will take precedence over the defaults set in the `stores` configuration, however if a field is not provided in the `VaultSecretSync` resource, the default value from the `stores` configuration will be used. Defaults are evaluated at runtime and are not persisted back to the backend. This can be both a feature and a bug, depending on your use case. Once you set a central default, be cognizant of the fact that changing the default _will_ change the behavior of existing `VaultSecretSync` resources. For this reason it's generally recommended to not set global defaults and instead rely on fields being explicitly declared on the `VaultSecretSync` resources themselves, unless you know for certain that you want to change the behavior of all resources at once.
+Fields explictly defined in the `SecretSync` resource will take precedence over the defaults set in the `stores` configuration, however if a field is not provided in the `SecretSync` resource, the default value from the `stores` configuration will be used. Defaults are evaluated at runtime and are not persisted back to the backend. This can be both a feature and a bug, depending on your use case. Once you set a central default, be cognizant of the fact that changing the default _will_ change the behavior of existing `SecretSync` resources. For this reason it's generally recommended to not set global defaults and instead rely on fields being explicitly declared on the `SecretSync` resources themselves, unless you know for certain that you want to change the behavior of all resources at once.
 
 With this said, the fields defined will only work if the operator has the proper access to the stores. For more details on how to configure the operator to access the stores, see the [Security](./SECURITY.md) documentation.
 
@@ -110,7 +110,7 @@ helm install -n secretsync --create-namespace \
   -f /path/to/values.yaml
 ```
 
-Note this will install the `VaultSecretSync` CRD by default. While recommended to use the CRD when deploying in Kubernetes it is _technically_ not required, and so if you do not want to install the CRDs with the rest of the chart, you can pass the `--skip-crds` flag to the `helm install` command.
+Note this will install the `SecretSync` CRD by default. While recommended to use the CRD when deploying in Kubernetes it is _technically_ not required, and so if you do not want to install the CRDs with the rest of the chart, you can pass the `--skip-crds` flag to the `helm install` command.
 
 The chart will deploy one `Service` object for the event service with a `ClusterIP` type. This must be made accessible from the Vault audit log shipper(s) in whatever manner suits your environment.
 

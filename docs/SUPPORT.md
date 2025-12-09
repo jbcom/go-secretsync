@@ -102,7 +102,7 @@ When reporting bugs, please include:
 1. **Version Information**
    ```bash
    # If using CLI
-   vss --version
+   secretsync --version
    
    # If using GitHub Action
    # Include the version/tag from your workflow
@@ -260,7 +260,7 @@ For CLI:
 curl -LO https://github.com/jbcom/secretsync/releases/latest/download/secretsync-linux-amd64
 
 # Or use go install
-go install github.com/jbcom/secretsync/cmd/vss@latest
+go install github.com/jbcom/secretsync/cmd/secretsync@latest
 ```
 
 ### Where do I report a security issue?

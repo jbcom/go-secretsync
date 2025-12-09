@@ -1,6 +1,6 @@
-# Architecture Gap Analysis: Terraform Pipeline vs vault-secret-sync
+# Architecture Gap Analysis: Terraform Pipeline vs secretsync
 
-This document provides a comprehensive analysis of the requirements from the original Terraform-based `terraform-aws-secretsmanager` pipeline compared to the current `vault-secret-sync` implementation.
+This document provides a comprehensive analysis of the requirements from the original Terraform-based `terraform-aws-secretsmanager` pipeline compared to the current `secretsync` implementation.
 
 ## Executive Summary
 
@@ -176,7 +176,7 @@ Serverless_Prod:
   imports:
     - Serverless_Stg  # AWS account! Inherits CURRENT state from AWS
 
-# For vault-secret-sync using merge store:
+# For secretsync using merge store:
 # 1. Merge: analytics + analytics-engineers → merged-secrets/Serverless_Stg/
 # 2. Merge: merged-secrets/Serverless_Stg/ → merged-secrets/Serverless_Prod/
 # 3. Sync: merged-secrets/Serverless_Stg/ → AWS Serverless_Stg
@@ -307,7 +307,7 @@ if denylist:
 
 **Current Implementation (`internal/transforms/filter.go`):**
 - Filter transforms exist for include/exclude patterns
-- Applied at sync level via VaultSecretSync spec
+- Applied at sync level via SecretSync spec
 
 **GAP: MINOR** ✓
 - Filtering available via transforms

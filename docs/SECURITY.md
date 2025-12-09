@@ -95,7 +95,7 @@ and an example trusted entity configuration:
     {
       "Effect": "Allow",
       "Principal": {
-        "AWS": "arn:aws:iam::1234567890:role/vault-secret-sync"
+        "AWS": "arn:aws:iam::1234567890:role/secretsync"
       },
       "Action": ["sts:AssumeRole", "sts:TagSession"],
     }

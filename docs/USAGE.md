@@ -3,8 +3,8 @@
 ## YAML Configuration
 
 ```yaml
-apiVersion: vaultsecretsync.lestak.sh/v1alpha1
-kind: VaultSecretSync
+apiVersion: secretsync.jbcom.dev/v1alpha1
+kind: SecretSync
 metadata:
   name: "example-sync"
   namespace: "default"
@@ -70,8 +70,8 @@ spec:
         "custom": {
           "event": "{{ .Event }}",
           "message": "{{ .Message }}",
-          "name": "{{ .VaultSecretSync.Name }}"
-          "source.address": "{{ .VaultSecretSync.Spec.Source.Address }}"
+          "name": "{{ .SecretSync.Name }}"
+          "source.address": "{{ .SecretSync.Spec.Source.Address }}"
         }
       }
   - event: failure
@@ -84,8 +84,8 @@ spec:
         "custom": {
           "event": "{{ .Event }}",
           "message": "{{ .Message }}",
-          "name": "{{ .VaultSecretSync.Name }}"
-          "source.address": "{{ .VaultSecretSync.Spec.Source.Address }}"
+          "name": "{{ .SecretSync.Name }}"
+          "source.address": "{{ .SecretSync.Spec.Source.Address }}"
         }
       }
 ```
@@ -226,13 +226,13 @@ Webhooks can be configured to send a POST request to a specified URL when a sync
     method: "POST" # optional, default POST. Set to the HTTP method to use for the request
     headers: # optional, default empty. Set to a map of headers to include in the request
       Content-Type: "application/json"
-    template: | # optional, default empty. Set to a template to use for the request body. The template is a Go template with the following variables available: .Event, .Message, .VaultSecretSync
+    template: | # optional, default empty. Set to a template to use for the request body. The template is a Go template with the following variables available: .Event, .Message, .SecretSync
       {
         "custom": {
           "event": "{{ .Event }}",
           "message": "{{ .Message }}",
-          "name": "{{ .VaultSecretSync.Name }}"
-          "source.address": "{{ .VaultSecretSync.Spec.Source.Address }}"
+          "name": "{{ .SecretSync.Name }}"
+          "source.address": "{{ .SecretSync.Spec.Source.Address }}"
         }
       }
   - event: failure
@@ -240,13 +240,13 @@ Webhooks can be configured to send a POST request to a specified URL when a sync
     method: "POST" # optional, default POST. Set to the HTTP method to use for the request
     headers: # optional, default empty. Set to a map of headers to include in the request
       Content-Type: "application/json"
-    template: | # optional, default empty. Set to a template to use for the request body. The template is a Go template with the following variables available: .Event, .Message, .VaultSecretSync
+    template: | # optional, default empty. Set to a template to use for the request body. The template is a Go template with the following variables available: .Event, .Message, .SecretSync
       {
         "custom": {
           "event": "{{ .Event }}",
           "message": "{{ .Message }}",
-          "name": "{{ .VaultSecretSync.Name }}"
-          "source.address": "{{ .VaultSecretSync.Spec.Source.Address }}"
+          "name": "{{ .SecretSync.Name }}"
+          "source.address": "{{ .SecretSync.Spec.Source.Address }}"
         }
       }
 ```
@@ -255,12 +255,12 @@ Webhooks can be configured to send a POST request to a specified URL when a sync
 
 ### Kubernetes
 
-When deployed in Kubernetes, `VaultSecretSync` operations are exposed through the Kubernetes API. `VaultSecretSync` resources can be created, updated, and deleted through the Kubernetes API.
+When deployed in Kubernetes, `SecretSync` operations are exposed through the Kubernetes API. `SecretSync` resources can be created, updated, and deleted through the Kubernetes API.
 
 ```yaml
 cat <<EOF | kubectl apply -f -
-apiVersion: vaultsecretsync.lestak.sh/v1alpha1
-kind: VaultSecretSync
+apiVersion: secretsync.jbcom.dev/v1alpha1
+kind: SecretSync
 metadata:
   name: example
   namespace: default
@@ -278,19 +278,19 @@ spec:
 EOF
 ```
 
-Once created, the operator will begin syncing secrets from the source to the destination. You can trigger an immediate sync by annotating the `VaultSecretSync` resource with `force-sync`.
+Once created, the operator will begin syncing secrets from the source to the destination. You can trigger an immediate sync by annotating the `SecretSync` resource with `force-sync`.
 
 ```bash
 kubectl annotate vaultsecretsync example force-sync=$(date +%s) --overwrite
 ```
 
-To sync all `VaultSecretSync` resources in a namespace, you can use the following command:
+To sync all `SecretSync` resources in a namespace, you can use the following command:
 
 ```bash
 kubectl get vaultsecretsync -n example -o name | xargs -I {} kubectl annotate -n example {} force-sync=$(date +%s) --overwrite
 ```
 
-To sync all `VaultSecretSync` resources in all namespaces, you can use the following command:
+To sync all `SecretSync` resources in all namespaces, you can use the following command:
 
 ```bash
 for ns in $(kubectl get ns -o name | cut -d/ -f2); do kubectl get vaultsecretsync -n $ns -o name | xargs -I {} kubectl annotate -n $ns {} force-sync=$(date +%s) --overwrite; done

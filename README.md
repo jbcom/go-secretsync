@@ -11,15 +11,15 @@ SecretSync provides fully automated, real-time secret synchronization across mul
 
 ## Attribution
 
-This project is a fork of [robertlestak/vault-secret-sync](https://github.com/robertlestak/vault-secret-sync). We acknowledge and thank **Robert Lestak** for creating the original foundation this project builds upon.
+SecretSync originated as a fork of [robertlestak/vault-secret-sync](https://github.com/robertlestak/vault-secret-sync) (MIT License). We thank **Robert Lestak** for creating the original codebase.
 
-The fork has diverged significantly to support:
-- Multi-phase pipeline architecture (merge + sync)
-- S3 merge store support
-- Dynamic target discovery (AWS Organizations, Identity Center, SSM)
+**SecretSync is an independent product** with its own roadmap and development direction. It has been substantially rewritten with:
+- Two-phase pipeline architecture (merge → sync)
+- S3 merge store support  
+- Dynamic target discovery (AWS Organizations, Identity Center)
 - Comprehensive diff/dry-run system with CI/CD integration
-- DeepMerge semantics matching terraform-aws-secretsmanager
-- Universal multi-store support (beyond Vault-centric)
+- DeepMerge semantics for secret aggregation
+- Kubernetes operator with CRD support
 
 ## Supported Secret Stores
 
@@ -28,11 +28,7 @@ The fork has diverged significantly to support:
 | HashiCorp Vault (KV2) | ✅ | ✅ | ✅ |
 | AWS Secrets Manager | ✅ | ✅ | ❌ |
 | AWS S3 | ❌ | ❌ | ✅ |
-| GCP Secret Manager | ✅ | ✅ | ❌ |
-| GitHub Secrets | ❌ | ✅ | ❌ |
-| Doppler | ❌ | ✅ | ❌ |
-| Kubernetes Secrets | ❌ | ✅ | ❌ |
-| HTTP/Webhook | ❌ | ✅ | ❌ |
+| AWS Identity Center | Discovery | ❌ | ❌ |
 
 ## Two-Phase Pipeline Architecture
 
