@@ -40,10 +40,8 @@ services:
 
   # Test runner service - runs integration tests with access to both services
   test-runner:
-    # Use latest stable Go with automatic toolchain resolution
-    # go.mod declares go 1.25.3 (from hashicorp/vault dependency) but Go 1.25 doesn't exist yet
-    # Go's GOTOOLCHAIN=auto handles this by using the latest compatible version
-    image: golang:1-bookworm
+    # Go 1.24 - matches golangci-lint v2.7.2 build version
+    image: golang:1.24-bookworm
     working_dir: /app
     volumes:
       - .:/app

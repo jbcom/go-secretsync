@@ -14,10 +14,8 @@ permissions:
   contents: read
 
 env:
-  # Use stable Go version with automatic toolchain resolution
-  # go.mod declares go 1.25.3 (inherited from hashicorp/vault dependency)
-  # Go's GOTOOLCHAIN=auto handles forward-compatibility automatically
-  GO_VERSION: "stable"
+  # Go 1.24 - matches golangci-lint v2.7.2 build version
+  GO_VERSION: "1.24"
   IMAGE_NAME: jbcom/secretsync
 
 jobs:
@@ -71,11 +69,8 @@ jobs:
         run: go test -v -race ./...
 
   # ============================================
-  # LINT (TEMPORARILY DISABLED)
+  # LINT
   # ============================================
-  # Note: golangci-lint v1.64.8 is built with Go 1.24 but our dependencies
-  # require go 1.25.3 (via hashicorp/vault). Linting is disabled until
-  # a compatible golangci-lint version is available.
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -87,11 +82,10 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: golangci-lint (skipped - version mismatch)
-        run: |
-          echo "⚠️ Linting skipped: golangci-lint (Go 1.24) cannot lint code targeting Go 1.25.3"
-          echo "This is a temporary workaround until golangci-lint supports Go 1.25+"
-          exit 0
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
 
   # ============================================
   # BUILD (PR only - validate build works)

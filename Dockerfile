@@ -5,7 +5,8 @@
 # Tests now run in CI (outside Docker), so this Dockerfile focuses purely
 # on compiling and packaging the runtime image.
 ###
-FROM golang:1-bookworm AS builder
+# Go 1.24 - matches golangci-lint v2.7.2 build version
+FROM golang:1.24-bookworm AS builder
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64

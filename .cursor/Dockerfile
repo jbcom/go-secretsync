@@ -1,5 +1,6 @@
 # Go development environment for SecretSync
-FROM golang:1-bookworm
+# Go 1.24 - matches golangci-lint v2.7.2 build version
+FROM golang:1.24-bookworm
 
 WORKDIR /workspace
 
