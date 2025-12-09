@@ -533,11 +533,14 @@ func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string
 		// List contents at current path
 		keys, err := vc.listPathContents(ctx, metadataPath)
 		if err != nil {
-			// Distinguish between expected errors (not found, permission) and unexpected errors
-			errMsg := err.Error()
-			if strings.Contains(errMsg, "permission denied") || strings.Contains(errMsg, "not found") || strings.Contains(errMsg, "403") {
-				l.WithError(err).Debugf("Skipping inaccessible path: %s", metadataPath)
-				continue
+			// Use typed error checking instead of brittle string matching
+			var respErr *api.ResponseError
+			if errors.As(err, &respErr) {
+				// 403 (Forbidden) and 404 (Not Found) are expected for inaccessible paths
+				if respErr.StatusCode == 403 || respErr.StatusCode == 404 {
+					l.WithError(err).Debugf("Skipping inaccessible path (HTTP %d): %s", respErr.StatusCode, metadataPath)
+					continue
+				}
 			}
 			// Network, authentication, or other critical errors should propagate
 			return nil, fmt.Errorf("failed to list %s: %w", metadataPath, err)
