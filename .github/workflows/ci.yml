@@ -153,6 +153,7 @@ jobs:
 
       # docker/build-push-action v6.18.0
       - name: Build and push Docker image
+        id: docker-build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
@@ -164,6 +165,24 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             VERSION=${{ github.ref_name }}
+
+      - name: Update action.yml with Docker digest
+        run: |
+          DIGEST="${{ steps.docker-build.outputs.digest }}"
+          echo "Docker image digest: $DIGEST"
+          # Update action.yml to use immutable digest
+          sed -i "s|image: \"docker://jbcom/secretsync:.*\"|image: \"docker://jbcom/secretsync@${DIGEST}\"|" action.yml
+          cat action.yml
+
+      - name: Commit action.yml update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add action.yml
+          git diff --cached --quiet || git commit -m "chore: update action.yml with Docker digest for ${{ github.ref_name }}"
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
 
       # goreleaser/goreleaser-action v6.4.0
       - name: Run GoReleaser
