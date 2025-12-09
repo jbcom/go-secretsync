@@ -121,7 +121,7 @@ func TestConfigValidate(t *testing.T) {
 		errMsg  string
 	}{
 		{
-			name: "valid config",
+			name: "valid full config",
 			config: Config{
 				Vault: VaultConfig{Address: "https://vault.example.com"},
 				Sources: map[string]Source{
@@ -135,35 +135,29 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "missing vault address",
+			name: "minimal config - just targets with imports",
 			config: Config{
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
-				MergeStore: MergeStoreConfig{Vault: &MergeStoreVault{Mount: "merged"}},
+				// No vault address, no merge store, no explicit sources
+				// All will be auto-resolved
 				Targets: map[string]Target{
-					"Stg": {AccountID: "111111111111", Imports: []string{"analytics"}},
+					"Production": {Imports: []string{"analytics", "data-engineers"}},
 				},
 			},
-			wantErr: true,
-			errMsg:  "vault.address is required",
+			wantErr: false,
 		},
 		{
-			name: "missing merge store",
+			name: "minimal config - targets without account_id",
 			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
+				// account_id is optional - resolved via fuzzy matching
 				Targets: map[string]Target{
-					"Stg": {AccountID: "111111111111", Imports: []string{"analytics"}},
+					"Staging":    {Imports: []string{"shared"}},
+					"Production": {Imports: []string{"Staging"}}, // inherits from Staging
 				},
 			},
-			wantErr: true,
-			errMsg:  "merge_store must specify",
+			wantErr: false,
 		},
 		{
-			name: "no targets",
+			name: "no targets at all",
 			config: Config{
 				Vault:      VaultConfig{Address: "https://vault.example.com"},
 				MergeStore: MergeStoreConfig{Vault: &MergeStoreVault{Mount: "merged"}},
@@ -172,42 +166,18 @@ func TestConfigValidate(t *testing.T) {
 			errMsg:  "at least one target",
 		},
 		{
-			name: "target missing account_id",
+			name: "invalid account_id format when provided",
 			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
-				MergeStore: MergeStoreConfig{Vault: &MergeStoreVault{Mount: "merged"}},
 				Targets: map[string]Target{
-					"Stg": {Imports: []string{"analytics"}},
+					"Stg": {AccountID: "invalid-id", Imports: []string{"analytics"}},
 				},
 			},
 			wantErr: true,
-			errMsg:  "account_id is required",
-		},
-		{
-			name: "invalid import reference",
-			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
-				MergeStore: MergeStoreConfig{Vault: &MergeStoreVault{Mount: "merged"}},
-				Targets: map[string]Target{
-					"Stg": {AccountID: "111111111111", Imports: []string{"nonexistent"}},
-				},
-			},
-			wantErr: true,
-			errMsg:  "import \"nonexistent\" not found",
+			errMsg:  "invalid account_id format",
 		},
 		{
 			name: "valid S3 merge store",
 			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
 				MergeStore: MergeStoreConfig{S3: &MergeStoreS3{Bucket: "my-bucket", Prefix: "secrets/"}},
 				Targets: map[string]Target{
 					"Stg": {AccountID: "111111111111", Imports: []string{"analytics"}},
@@ -218,10 +188,6 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "S3 merge store missing bucket",
 			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
 				MergeStore: MergeStoreConfig{S3: &MergeStoreS3{Prefix: "secrets/"}},
 				Targets: map[string]Target{
 					"Stg": {AccountID: "111111111111", Imports: []string{"analytics"}},
@@ -231,13 +197,8 @@ func TestConfigValidate(t *testing.T) {
 			errMsg:  "merge_store.s3.bucket is required",
 		},
 		{
-			name: "valid dynamic target",
+			name: "valid dynamic target with discovery",
 			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
-				MergeStore: MergeStoreConfig{Vault: &MergeStoreVault{Mount: "merged"}},
 				DynamicTargets: map[string]DynamicTarget{
 					"sandboxes": {
 						Discovery: DiscoveryConfig{
@@ -250,37 +211,48 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "dynamic target missing discovery config",
+			name: "dynamic target with organizations discovery",
 			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
-				MergeStore: MergeStoreConfig{Vault: &MergeStoreVault{Mount: "merged"}},
 				DynamicTargets: map[string]DynamicTarget{
-					"sandboxes": {
-						Discovery: DiscoveryConfig{},
-						Imports:   []string{"analytics"},
+					"all_accounts": {
+						Discovery: DiscoveryConfig{
+							Organizations: &OrganizationsDiscovery{Recursive: true},
+						},
+						Imports: []string{"shared"},
 					},
 				},
 			},
-			wantErr: true,
-			errMsg:  "must specify identity_center, organizations, or accounts_list discovery",
+			wantErr: false,
 		},
 		{
 			name: "dynamic target with accounts_list",
 			config: Config{
-				Vault: VaultConfig{Address: "https://vault.example.com"},
-				Sources: map[string]Source{
-					"analytics": {Vault: &VaultSource{Mount: "analytics"}},
-				},
-				MergeStore: MergeStoreConfig{Vault: &MergeStoreVault{Mount: "merged"}},
 				DynamicTargets: map[string]DynamicTarget{
 					"sandboxes": {
 						Discovery: DiscoveryConfig{
 							AccountsList: &AccountsListDiscovery{Source: "ssm:/platform/sandboxes"},
 						},
 						Imports: []string{"analytics"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "mixed static and dynamic targets",
+			config: Config{
+				Targets: map[string]Target{
+					"Production": {AccountID: "111111111111", Imports: []string{"shared"}},
+				},
+				DynamicTargets: map[string]DynamicTarget{
+					"sandboxes": {
+						Discovery: DiscoveryConfig{
+							Organizations: &OrganizationsDiscovery{
+								OU:        "ou-xxxx-sandboxes",
+								Recursive: true,
+							},
+						},
+						Imports: []string{"Production"}, // inherit from static target
 					},
 				},
 			},

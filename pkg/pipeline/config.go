@@ -13,7 +13,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// LoadConfig loads configuration from file
+// LoadConfig loads configuration from file with auto-detection and resolution.
+// Minimal config example:
+//
+//	sources:
+//	  - analytics
+//	  - data-engineers
+//	targets:
+//	  Production:
+//	    imports: [analytics, data-engineers]
+//
+// The system will auto-detect Vault/AWS auth and resolve sources/targets
+// via fuzzy matching against AWS Organizations.
 func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -27,6 +38,7 @@ func LoadConfig(path string) (*Config, error) {
 
 	cfg.applyDefaults()
 	cfg.expandEnvVars()
+	cfg.AutoConfigure() // Fill in intelligent defaults
 
 	// Also load via Viper for env var override support
 	v := viper.New()
@@ -35,11 +47,15 @@ func LoadConfig(path string) (*Config, error) {
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 
+	// Override from environment if set
 	if v.IsSet("log.level") {
 		cfg.Log.Level = v.GetString("log.level")
 	}
 	if v.IsSet("aws.region") {
 		cfg.AWS.Region = v.GetString("aws.region")
+	}
+	if v.IsSet("vault.address") {
+		cfg.Vault.Address = v.GetString("vault.address")
 	}
 
 	return &cfg, nil
@@ -95,73 +111,105 @@ func (c *Config) expandEnvVars() {
 	}
 }
 
-// Validate validates the configuration
+// Validate validates the configuration with minimal requirements.
+// The system auto-detects and resolves most configuration via:
+// - AWS Organizations discovery for account resolution
+// - Fuzzy name matching for source/target identification
+// - Auto-detection of Vault vs AWS based on what's available
 func (c *Config) Validate() error {
-	if c.Vault.Address == "" {
-		return fmt.Errorf("vault.address is required")
-	}
-
-	if c.MergeStore.Vault == nil && c.MergeStore.S3 == nil {
-		return fmt.Errorf("merge_store must specify either vault or s3")
-	}
-
-	if c.MergeStore.S3 != nil {
-		if c.MergeStore.S3.Bucket == "" {
-			return fmt.Errorf("merge_store.s3.bucket is required")
-		}
-	}
-
+	// Must have at least one target or dynamic_target
 	if len(c.Targets) == 0 && len(c.DynamicTargets) == 0 {
 		return fmt.Errorf("at least one target or dynamic_target is required")
 	}
 
-	for name, target := range c.Targets {
-		if target.AccountID == "" {
-			return fmt.Errorf("target %q: account_id is required", name)
-		}
-		if !isValidAWSAccountID(target.AccountID) {
-			return fmt.Errorf("target %q: invalid account_id format %q (must be 12 digits)", name, target.AccountID)
-		}
-		for _, imp := range target.Imports {
-			if _, ok := c.Sources[imp]; !ok {
-				if _, ok := c.Targets[imp]; !ok {
-					return fmt.Errorf("target %q: import %q not found in sources or targets", name, imp)
-				}
-			}
-		}
+	// Validate S3 merge store if explicitly configured
+	if c.MergeStore.S3 != nil && c.MergeStore.S3.Bucket == "" {
+		return fmt.Errorf("merge_store.s3.bucket is required when using S3 merge store")
 	}
 
+	// Validate target account_id format IF explicitly provided
+	// (account_id is NOT required - can be resolved via fuzzy matching)
+	for name, target := range c.Targets {
+		if target.AccountID != "" && !isValidAWSAccountID(target.AccountID) {
+			return fmt.Errorf("target %q: invalid account_id format %q (must be 12 digits)", name, target.AccountID)
+		}
+		// Note: imports are NOT validated here - they can be resolved dynamically
+		// via fuzzy matching against AWS Organizations or Vault mounts
+	}
+
+	// Validate inheritance if targets reference each other
 	if err := c.ValidateTargetInheritance(); err != nil {
 		return err
 	}
 
+	// Validate dynamic target patterns if present
 	for name, dt := range c.DynamicTargets {
-		if dt.Discovery.IdentityCenter == nil && dt.Discovery.Organizations == nil && dt.Discovery.AccountsList == nil {
-			return fmt.Errorf("dynamic_target %q: must specify identity_center, organizations, or accounts_list discovery", name)
-		}
-		// Validate name matching config if present
+		// Discovery config is optional - can default to Organizations auto-discovery
 		if dt.Discovery.Organizations != nil && dt.Discovery.Organizations.NameMatching != nil {
 			nm := dt.Discovery.Organizations.NameMatching
 			if nm.Strategy != "" && nm.Strategy != "exact" && nm.Strategy != "fuzzy" && nm.Strategy != "loose" {
 				return fmt.Errorf("dynamic_target %q: invalid name_matching.strategy %q (must be exact, fuzzy, or loose)", name, nm.Strategy)
 			}
 		}
-		// Validate account_name_patterns if present
+		// Validate account_name_patterns regex if present
 		for i, pattern := range dt.AccountNamePatterns {
-			if pattern.Pattern == "" {
-				return fmt.Errorf("dynamic_target %q: account_name_patterns[%d].pattern is required", name, i)
-			}
-			if pattern.Target == "" {
-				return fmt.Errorf("dynamic_target %q: account_name_patterns[%d].target is required", name, i)
-			}
-			// Validate regex compiles
-			if _, err := regexp.Compile(pattern.Pattern); err != nil {
-				return fmt.Errorf("dynamic_target %q: account_name_patterns[%d].pattern is invalid regex: %w", name, i, err)
+			if pattern.Pattern != "" {
+				if _, err := regexp.Compile(pattern.Pattern); err != nil {
+					return fmt.Errorf("dynamic_target %q: account_name_patterns[%d].pattern is invalid regex: %w", name, i, err)
+				}
 			}
 		}
 	}
 
 	return nil
+}
+
+// AutoConfigure applies intelligent defaults and resolves unspecified configuration.
+// Call this after loading config but before validation to fill in gaps.
+func (c *Config) AutoConfigure() {
+	// Auto-detect merge store if not specified
+	if c.MergeStore.Vault == nil && c.MergeStore.S3 == nil {
+		if c.Vault.Address != "" {
+			// Default to Vault merge store if Vault is configured
+			c.MergeStore.Vault = &MergeStoreVault{Mount: "merged-secrets"}
+			log.Info("Auto-configured Vault merge store (merged-secrets)")
+		}
+		// If no Vault and no S3, merge store will be configured during pipeline init
+		// based on available auth
+	}
+
+	// Initialize sources map if nil
+	if c.Sources == nil {
+		c.Sources = make(map[string]Source)
+	}
+
+	// Auto-create source entries for any imports that don't exist
+	// These will be resolved later via fuzzy matching
+	for _, target := range c.Targets {
+		for _, imp := range target.Imports {
+			// Skip if it's another target (inheritance)
+			if _, isTarget := c.Targets[imp]; isTarget {
+				continue
+			}
+			// Create placeholder source if doesn't exist
+			if _, exists := c.Sources[imp]; !exists {
+				c.Sources[imp] = Source{} // Will be resolved via fuzzy matching
+				log.WithField("source", imp).Debug("Auto-created placeholder source for resolution")
+			}
+		}
+	}
+
+	// Same for dynamic targets
+	for _, dt := range c.DynamicTargets {
+		for _, imp := range dt.Imports {
+			if _, isTarget := c.Targets[imp]; isTarget {
+				continue
+			}
+			if _, exists := c.Sources[imp]; !exists {
+				c.Sources[imp] = Source{}
+			}
+		}
+	}
 }
 
 // WriteConfig writes the configuration to a file

@@ -46,8 +46,9 @@ func TestNew(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Invalid configuration - no vault address",
+			name: "Valid minimal configuration - no explicit vault address",
 			config: &Config{
+				// Vault address is optional - can be auto-detected
 				MergeStore: MergeStoreConfig{
 					Vault: &MergeStoreVault{
 						Mount: "merge",
@@ -59,8 +60,15 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
+			wantErr: false, // Now valid - vault address not required
+		},
+		{
+			name: "Invalid configuration - no targets",
+			config: &Config{
+				Vault: VaultConfig{Address: "http://localhost:8200"},
+			},
 			wantErr: true,
-			errMsg:  "vault.address",
+			errMsg:  "at least one target",
 		},
 	}
 
@@ -377,8 +385,9 @@ func TestPipeline_ErrorHandling(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Missing vault address",
+			name: "Valid minimal config - vault address optional",
 			config: &Config{
+				// Vault address is now optional
 				MergeStore: MergeStoreConfig{
 					Vault: &MergeStoreVault{
 						Mount: "merge",
@@ -390,11 +399,12 @@ func TestPipeline_ErrorHandling(t *testing.T) {
 					},
 				},
 			},
-			wantErr: true,
+			wantErr: false, // Now valid
 		},
 		{
-			name: "Missing merge store",
+			name: "Valid minimal config - merge store auto-configured",
 			config: &Config{
+				// Merge store is auto-configured when Vault is present
 				Vault: VaultConfig{
 					Address: "http://localhost:8200",
 				},
@@ -404,7 +414,7 @@ func TestPipeline_ErrorHandling(t *testing.T) {
 					},
 				},
 			},
-			wantErr: true,
+			wantErr: false, // Now valid - merge store auto-configured
 		},
 		{
 			name: "Missing targets",
