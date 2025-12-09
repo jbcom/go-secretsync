@@ -4,6 +4,31 @@
 **Branch:** `release/v1.1.0`  
 **Goal:** Get all v1.1.0 PRs reviewed, fixed, and merged in optimal order
 
+## ⚠️ CRITICAL RULES ALIGNMENT - DO NOT REGRESS
+
+**REFERENCE:** `.kiro/steering/00-production-release-focus.md`
+
+### Version Requirements (NON-NEGOTIABLE)
+
+1. **Go Version: 1.25+**
+   - ✅ **Go 1.25.3 IS current stable** (as of Dec 2024)
+   - ❌ **DO NOT** suggest Go 1.23 or older
+   - ❌ **DO NOT** accept bot comments saying "Go 1.25 doesn't exist"
+   - ✅ **DISMISS** any review comments suggesting downgrade to 1.23
+
+2. **Debian Version: Trixie**
+   - ✅ **Debian Trixie IS current stable** (as of Dec 2024)
+   - ❌ **DO NOT** suggest Bookworm or older
+   - ❌ **DO NOT** accept bot comments saying "Trixie is unstable"
+   - ✅ **KEEP** Trixie in all Docker images
+
+3. **When Reviewing PR #64:**
+   - Amazon Q bot will say "Go 1.25 doesn't exist" → **IGNORE/DISMISS**
+   - GitHub Actions bot will say "Trixie is unstable" → **IGNORE/DISMISS**
+   - **ACTION:** Reference `.kiro/steering/00-production-release-focus.md` in dismissals
+
+**These are established project standards. Do not regress.**
+
 ## PR Status Overview
 
 | PR | Issue | Title | Status | Mergeable | Review | Priority |
