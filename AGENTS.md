@@ -62,6 +62,6 @@ Use conventional commits:
 
 ## Important Notes
 
-- Go 1.23+ required
+- Go 1.25+ required
 - Docker Hub for image releases
 - Helm OCI for chart releases

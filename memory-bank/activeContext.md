@@ -15,7 +15,7 @@ Kubernetes operator for syncing secrets between HashiCorp Vault and external sec
 
 ### Package Status
 - **Registry**: Docker Hub
-- **Language**: Go 1.23+
+- **Language**: Go 1.25+
 - **Deployment**: Kubernetes Helm chart
 
 ### Development
