@@ -31,7 +31,7 @@ func LoadConfig(path string) (*Config, error) {
 	// Also load via Viper for env var override support
 	v := viper.New()
 	v.SetConfigFile(path)
-	v.SetEnvPrefix("VSS")
+	v.SetEnvPrefix("SECRETSYNC")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 

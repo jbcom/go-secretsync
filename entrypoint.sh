@@ -5,7 +5,7 @@
 set -e
 
 # Start building the command with base
-CMD="vss pipeline"
+CMD="secretsync pipeline"
 
 # Add config (always required)
 if [ -n "$INPUT_CONFIG" ]; then
