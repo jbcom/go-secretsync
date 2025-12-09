@@ -375,7 +375,8 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 	})
 	l.Trace("start")
 	defer l.Trace("end")
-	var secretsList []string
+	// Initialize to empty slice, not nil, so callers always get a valid slice
+	secretsList := []string{}
 	var nextToken *string
 	arnMap := make(map[string]string)
 	for {
