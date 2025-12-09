@@ -140,7 +140,6 @@ pkg/
 - Prepare for v1.1.0 release
 
 ---
-<<<<<<< HEAD
 
 ### Session: 2024-12-09 - Dependency Management and Issue Triage
 
