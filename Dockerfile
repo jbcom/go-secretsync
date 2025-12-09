@@ -5,7 +5,7 @@
 # Tests now run in CI (outside Docker), so this Dockerfile focuses purely
 # on compiling and packaging the runtime image.
 ###
-FROM golang:1.23-bookworm AS builder
+FROM golang:1-bookworm AS builder
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64

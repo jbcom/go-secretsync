@@ -1,6 +1,6 @@
 module github.com/jbcom/secretsync
 
-go 1.23
+go 1.25.3
 
 // required for hashicorp/vault
 replace github.com/pires/go-proxyproto v1.0.0 => github.com/pires/go-proxyproto v0.7.0

@@ -40,7 +40,7 @@ services:
 
   # Test runner service - runs integration tests with access to both services
   test-runner:
-    image: golang:1.23
+    image: golang:1
     working_dir: /app
     volumes:
       - .:/app
