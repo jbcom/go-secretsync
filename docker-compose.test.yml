@@ -1,5 +1,11 @@
 version: '3.8'
 
+# Integration test environment for FSC compatibility testing
+# Usage:
+#   docker-compose -f docker-compose.test.yml up -d
+#   make test-integration
+#   docker-compose -f docker-compose.test.yml down
+
 services:
   # LocalStack for AWS Secrets Manager emulation
   localstack:
@@ -12,9 +18,9 @@ services:
       EAGER_SERVICE_LOADING: 1
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   # HashiCorp Vault in dev mode
   vault:
@@ -29,36 +35,35 @@ services:
       - IPC_LOCK
     healthcheck:
       test: ["CMD", "vault", "status"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
     command: server -dev -dev-root-token-id="test-root-token"
 
-  # Initialize Vault with test data
-  vault-init:
-    image: hashicorp/vault:latest
+  # Test runner service - runs integration tests with access to both services
+  test-runner:
+    image: golang:1.23
+    working_dir: /app
+    volumes:
+      - .:/app
     depends_on:
+      localstack:
+        condition: service_healthy
       vault:
         condition: service_healthy
     environment:
+      # Vault config
       VAULT_ADDR: "http://vault:8200"
       VAULT_TOKEN: "test-root-token"
-    entrypoint: /bin/sh
-    command: |
-      -c '
-      # Enable KV v2 secrets engine
-      vault secrets enable -path=secret kv-v2 || true
-      
-      # Create test secrets
-      vault kv put secret/test-app/config \
-        database_url="postgres://localhost:5432/testdb" \
-        api_key="test-api-key-12345"
-      
-      vault kv put secret/test-app/nested/level1/config \
-        nested_secret="nested-value"
-      
-      vault kv put secret/shared/common \
-        shared_key="shared-value"
-      
-      echo "Vault initialized with test data"
-      '
+      # AWS config (LocalStack)
+      AWS_ENDPOINT_URL: "http://localstack:4566"
+      AWS_ACCESS_KEY_ID: "test"
+      AWS_SECRET_ACCESS_KEY: "test"
+      AWS_REGION: "us-east-1"
+      # Go test config
+      CGO_ENABLED: "0"
+    command: >
+      sh -c "
+        go mod download &&
+        go test -v -tags=integration ./tests/integration/...
+      "
