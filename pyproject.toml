@@ -1,0 +1,7 @@
+[project]
+name = "secretsync-docs"
+version = "0.0.0"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+docs = ["sphinx", "sphinx-rtd-theme", "myst-parser"]

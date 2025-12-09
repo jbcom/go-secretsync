@@ -1,10 +1,7 @@
-Modules
-=======
+Go Packages
+===========
 
-.. TODO: Replace PACKAGE_NAME with your actual package name
+This is a Go project. For Go package documentation, see:
 
-.. autosummary::
-   :toctree: _autosummary
-   :recursive:
-
-   PACKAGE_NAME
+* `pkg.go.dev documentation <https://pkg.go.dev/github.com/jbcom/secretsync>`_
+* Source code in the ``pkg/`` directory

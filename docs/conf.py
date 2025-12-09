@@ -4,12 +4,10 @@
 import os
 import sys
 
-# Add source to path for autodoc
-sys.path.insert(0, os.path.abspath("../src"))
+# This is a Go project - no Python source path needed
 
 # -- Project information -----------------------------------------------------
-# TODO: Update these for your project
-project = "PACKAGE_NAME"
+project = "secretsync"
 copyright = "2025, Jon Bogaty"
 author = "Jon Bogaty"
 
@@ -30,14 +28,7 @@ except Exception:
 # -- General configuration ---------------------------------------------------
 
 extensions = [
-    # Python documentation
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.intersphinx",
-    "sphinx_autodoc_typehints",
-    # Markdown support
+    # Markdown support for Go project documentation
     "myst_parser",
     # Diagrams (optional - requires sphinxcontrib-mermaid)
     # "sphinxcontrib.mermaid",
@@ -67,33 +58,6 @@ html_theme_options = {
 }
 
 # -- Extension configuration -------------------------------------------------
-
-# autodoc settings
-autodoc_default_options = {
-    "members": True,
-    "member-order": "bysource",
-    "special-members": "__init__",
-    "undoc-members": True,
-    "exclude-members": "__weakref__",
-    "show-inheritance": True,
-}
-autodoc_typehints = "description"
-autodoc_class_signature = "separated"
-
-# autosummary settings
-autosummary_generate = True
-
-# napoleon settings (Google/NumPy style docstrings)
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = True
-napoleon_use_param = True
-napoleon_use_rtype = True
-
-# intersphinx settings
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-}
 
 # myst_parser settings
 myst_enable_extensions = [

@@ -1,16 +1,13 @@
 API Reference
 =============
 
-.. TODO: Add your module documentation here
+This is a Go project. For detailed API documentation, please refer to:
 
-.. This will auto-generate documentation from docstrings:
-.. .. automodule:: PACKAGE_NAME
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+* `pkg.go.dev <https://pkg.go.dev/github.com/jbcom/secretsync>`_ - Official Go documentation
+* Source code in the repository
 
-Module Index
-------------
+Package Index
+-------------
 
 .. toctree::
    :maxdepth: 2

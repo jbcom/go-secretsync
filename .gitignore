@@ -16,6 +16,8 @@ vss
 *.dylib
 dist/
 build/
+docs/_build/
+uv.lock
 
 # Test artifacts
 *.test
