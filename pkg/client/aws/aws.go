@@ -234,7 +234,7 @@ func (c *AwsClient) createSecret(ctx context.Context, name string, secret []byte
 	defer l.Trace("end")
 	csi := &secretsmanager.CreateSecretInput{
 		Name:         &name,
-		Description:  aws.String("managed in HashiCorp Vault. do not edit directly."),
+		Description:  aws.String("managed by SecretSync. do not edit directly."),
 		SecretString: aws.String(string(secret)),
 	}
 	if c.EncryptionKey != "" {
