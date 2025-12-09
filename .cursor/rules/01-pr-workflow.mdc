@@ -32,6 +32,19 @@ globs: "**/*"
 @copilot review
 ```
 
+### ⛔ AI Agents: Version Review Policy
+
+**DO NOT** submit PR review comments claiming versions are invalid based on training data.
+
+- ❌ "Go 1.25 doesn't exist" → Your training data is stale
+- ❌ "Latest stable is X.Y" → You cannot know this without live lookup
+- ✅ "Consider verifying compatibility" → Acceptable
+- ✅ "Pin to patch version for reproducibility" → Acceptable
+
+**If you cannot verify versions via live sources, DO NOT make claims about version validity.**
+
+Reviews violating this policy are auto-rejected regardless of claim validity.
+
 ## Addressing Feedback
 
 1. Make commits that fix issues

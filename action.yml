@@ -4,6 +4,10 @@ author: "jbcom"
 description: "Sync secrets from HashiCorp Vault to AWS Secrets Manager across multiple accounts"
 runs:
   using: "docker"
+  # TODO: Once release workflow automation exists, use immutable digest format:
+  # 1. Get digest: docker pull jbcom/secretsync:v1 && docker inspect --format='{{index .RepoDigests 0}}' jbcom/secretsync:v1
+  # 2. Update to: image: "docker://jbcom/secretsync:v1@sha256:<digest>"
+  # For now, using tag-based reference until digest automation is implemented
   image: "docker://jbcom/secretsync:v1" # x-release-please-version
 branding:
   icon: "lock"
