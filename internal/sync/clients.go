@@ -5,14 +5,10 @@ import (
 	"errors"
 
 	"github.com/jbcom/secretsync/api/v1alpha1"
-	"github.com/jbcom/secretsync/pkg/driver"
 	"github.com/jbcom/secretsync/pkg/client/aws"
-	"github.com/jbcom/secretsync/pkg/discovery/identitycenter"
-	"github.com/jbcom/secretsync/stores/doppler"
-	"github.com/jbcom/secretsync/stores/gcp"
-	"github.com/jbcom/secretsync/stores/github"
-	"github.com/jbcom/secretsync/stores/httpstore"
 	"github.com/jbcom/secretsync/pkg/client/vault"
+	"github.com/jbcom/secretsync/pkg/discovery/identitycenter"
+	"github.com/jbcom/secretsync/pkg/driver"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -66,15 +62,6 @@ func setStoreGlobalDefaults(s *v1alpha1.VaultSecretSync) error {
 		if d.IdentityCenter != nil && DefaultConfigs[driver.DriverNameIdentityCenter] != nil {
 			err = d.IdentityCenter.SetDefaults(DefaultConfigs[driver.DriverNameIdentityCenter].IdentityCenter)
 		}
-		if d.Doppler != nil && DefaultConfigs[driver.DriverNameDoppler] != nil {
-			err = d.Doppler.SetDefaults(DefaultConfigs[driver.DriverNameDoppler].Doppler)
-		}
-		if d.GCP != nil && DefaultConfigs[driver.DriverNameGcp] != nil {
-			err = d.GCP.SetDefaults(DefaultConfigs[driver.DriverNameGcp].GCP)
-		}
-		if d.GitHub != nil && DefaultConfigs[driver.DriverNameGitHub] != nil {
-			err = d.GitHub.SetDefaults(DefaultConfigs[driver.DriverNameGitHub].GitHub)
-		}
 		if d.Vault != nil && DefaultConfigs[driver.DriverNameVault] != nil {
 			err = d.Vault.SetDefaults(DefaultConfigs[driver.DriverNameVault].Vault)
 		}
@@ -119,28 +106,7 @@ func InitSyncConfigClients(sc v1alpha1.VaultSecretSync) (*SyncClients, error) {
 			}
 			scs.Dest = append(scs.Dest, client)
 		} else if d.IdentityCenter != nil {
-			client, err := awsidentitycenter.NewClient(d.IdentityCenter)
-			if err != nil {
-				l.Error(err)
-				return nil, err
-			}
-			scs.Dest = append(scs.Dest, client)
-		} else if d.Doppler != nil {
-			client, err := doppler.NewClient(d.Doppler)
-			if err != nil {
-				l.Error(err)
-				return nil, err
-			}
-			scs.Dest = append(scs.Dest, client)
-		} else if d.GCP != nil {
-			client, err := gcp.NewClient(d.GCP)
-			if err != nil {
-				l.Error(err)
-				return nil, err
-			}
-			scs.Dest = append(scs.Dest, client)
-		} else if d.GitHub != nil {
-			client, err := github.NewClient(d.GitHub)
+			client, err := identitycenter.NewClient(d.IdentityCenter)
 			if err != nil {
 				l.Error(err)
 				return nil, err
@@ -148,13 +114,6 @@ func InitSyncConfigClients(sc v1alpha1.VaultSecretSync) (*SyncClients, error) {
 			scs.Dest = append(scs.Dest, client)
 		} else if d.Vault != nil {
 			client, err := vault.NewClient(d.Vault)
-			if err != nil {
-				l.Error(err)
-				return nil, err
-			}
-			scs.Dest = append(scs.Dest, client)
-		} else if d.HTTP != nil {
-			client, err := httpstore.NewClient(d.HTTP)
 			if err != nil {
 				l.Error(err)
 				return nil, err

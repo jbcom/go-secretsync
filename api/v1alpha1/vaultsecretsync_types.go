@@ -4,12 +4,8 @@ package v1alpha1
 
 import (
 	"github.com/jbcom/secretsync/pkg/client/aws"
-	"github.com/jbcom/secretsync/pkg/discovery/identitycenter"
-	"github.com/jbcom/secretsync/stores/doppler"
-	"github.com/jbcom/secretsync/stores/gcp"
-	"github.com/jbcom/secretsync/stores/github"
-	"github.com/jbcom/secretsync/stores/httpstore"
 	"github.com/jbcom/secretsync/pkg/client/vault"
+	"github.com/jbcom/secretsync/pkg/discovery/identitycenter"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,13 +35,9 @@ const (
 )
 
 type StoreConfig struct {
-	AWS            *aws.AwsClient                            `json:"aws,omitempty" yaml:"aws,omitempty"`
-	IdentityCenter *awsidentitycenter.IdentityCenterClient   `json:"awsIdentityCenter,omitempty" yaml:"awsIdentityCenter,omitempty"`
-	Doppler        *doppler.DopplerClient                    `json:"doppler,omitempty" yaml:"doppler,omitempty"`
-	GCP            *gcp.GcpClient                            `json:"gcp,omitempty" yaml:"gcp,omitempty"`
-	GitHub         *github.GitHubClient                      `json:"github,omitempty" yaml:"github,omitempty"`
-	Vault          *vault.VaultClient                        `json:"vault,omitempty" yaml:"vault,omitempty"`
-	HTTP           *httpstore.HTTPClient                     `json:"http,omitempty" yaml:"http,omitempty"`
+	AWS            *aws.AwsClient                          `json:"aws,omitempty" yaml:"aws,omitempty"`
+	IdentityCenter *identitycenter.IdentityCenterClient    `json:"awsIdentityCenter,omitempty" yaml:"awsIdentityCenter,omitempty"`
+	Vault          *vault.VaultClient                      `json:"vault,omitempty" yaml:"vault,omitempty"`
 }
 
 type RegexpFilterConfig struct {

@@ -7,11 +7,7 @@ var (
 
 	DriverNames = []DriverName{
 		DriverNameAws,
-		DriverNameGcp,
-		DriverNameGitHub,
 		DriverNameVault,
-		DriverNameHttp,
-		DriverNameDoppler,
 		DriverNameIdentityCenter,
 	}
 )
@@ -20,11 +16,7 @@ type DriverName string
 
 const (
 	DriverNameAws            DriverName = "aws"
-	DriverNameGcp            DriverName = "gcp"
-	DriverNameGitHub         DriverName = "github"
 	DriverNameVault          DriverName = "vault"
-	DriverNameHttp           DriverName = "http"
-	DriverNameDoppler        DriverName = "doppler"
 	DriverNameIdentityCenter DriverName = "awsIdentityCenter"
 )
 
