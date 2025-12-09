@@ -139,11 +139,12 @@ func (cb *CircuitBreaker) Execute(ctx context.Context, fn func(context.Context) 
 			"state":          cb.cb.State().String(),
 		})
 
-		if err == gobreaker.ErrOpenState {
+		switch {
+		case errors.Is(err, gobreaker.ErrOpenState):
 			l.Debug("Circuit breaker is open - request rejected")
-		} else if err == gobreaker.ErrTooManyRequests {
+		case errors.Is(err, gobreaker.ErrTooManyRequests):
 			l.Debug("Circuit breaker is half-open - too many requests")
-		} else {
+		default:
 			l.WithError(err).Debug("Circuit breaker tracked failure")
 		}
 	}
