@@ -3,10 +3,12 @@ package vault
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/jbcom/secretsync/pkg/driver"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
