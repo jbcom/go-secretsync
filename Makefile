@@ -12,12 +12,18 @@ GOLINT=golangci-lint
 # Build info
 BINARY_NAME=secretsync
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+DATE?=$(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
+LDFLAGS=-s -w \
+	-X github.com/jbcom/secretsync/cmd/secretsync/cmd.Version=$(VERSION) \
+	-X github.com/jbcom/secretsync/cmd/secretsync/cmd.Commit=$(COMMIT) \
+	-X github.com/jbcom/secretsync/cmd/secretsync/cmd.Date=$(DATE)
 
 all: lint test build
 
 ## Build targets
 build:
-	$(GOBUILD) -ldflags "-X github.com/jbcom/secretsync/cmd/secretsync/cmd.Version=$(VERSION)" -o $(BINARY_NAME) ./cmd/secretsync
+	$(GOBUILD) -ldflags "$(LDFLAGS)" -o $(BINARY_NAME) ./cmd/secretsync
 
 ## Test targets
 test: test-unit

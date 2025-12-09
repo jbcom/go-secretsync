@@ -14,8 +14,12 @@ var (
 	logFormat string
 )
 
-// Version is set via ldflags at build time
-var Version = "dev"
+// Build information set via ldflags at build time
+var (
+	Version = "dev"
+	Commit  = "none"
+	Date    = "unknown"
+)
 
 // rootCmd represents the base command
 var rootCmd = &cobra.Command{

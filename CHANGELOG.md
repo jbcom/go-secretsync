@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to vault-secret-sync will be documented in this file.
+All notable changes to SecretSync will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,30 +8,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Integration into jbcom monorepo with full CI/CD pipeline
-- Multi-architecture Docker builds (linux/amd64, linux/arm64)
-- SBOM and provenance attestation for Docker images
-- Helm OCI artifact publishing to Docker Hub
-- Comprehensive test suite using pure-Go crypto (no CGO/libsodium required)
+- **SecretSync 1.0 Release** - Complete rebranding and architecture overhaul
+- Recursive Vault KV2 listing with BFS traversal
+- Target inheritance with circular dependency detection
+- Deepmerge support (list append, dict merge, scalar override)
+- AWS Organizations dynamic account discovery
+- Fuzzy name matching for AWS accounts
+- S3 merge store support
+- TTL-based caching for AWS ListSecrets
+- Enhanced path validation (directory traversal, null byte injection protection)
+- LogicalClient interface for testability
+- Comprehensive test suite (113+ test functions)
 
 ### Changed
-- **OWNERSHIP TRANSITION**: This package is now maintained by jbcom as part of the jbcom-control-center monorepo
-- Docker images now published to `docker.io/jbcom/vault-secret-sync`
-- Helm charts published to `oci://docker.io/jbcom`
+- **PROJECT RENAME**: vault-secret-sync → SecretSync
+- CLI renamed from `vss` to `secretsync`
+- Docker images published to `docker.io/jbcom/secretsync`
+- Helm charts published to `oci://registry-1.docker.io/jbcom/secretsync`
+- Simplified pipeline architecture (removed legacy operator complexity)
+- Environment variable prefix changed from `VSS_` to `SECRETSYNC_`
+
+### Removed
+- Legacy Kubernetes operator architecture (~13k lines)
+- Backend packages (kube, file)
+- Queue packages (redis, nats, sqs, memory)
+- Notification packages (webhook, slack, email)
+- GCP/GitHub/Doppler/HTTP store implementations
+- Event processing system
+
+### Security
+- Race condition fixes in AWS client with mutex protection
+- Cache invalidation on writes to prevent stale data
+- Path traversal attack prevention
+- Type-safe Vault API response parsing
+- Safe type assertions throughout codebase
 
 ### Fixed
-- Removed dead code: `countRegexMatches`, `countDeleteRegexMatches` (internal/sync/utils.go)
-- Removed dead code: `updateSecret` (stores/gcp/gcp.go)
-- Removed dead code: `tokenEnvTemplate` (stores/vault/vault.go)
-- Fixed `context.Background()` usage in kube.go - now properly uses passed context
-- Fixed error handling in server.go goroutine - errors are now logged
-- Fixed `AnnotationOperations` to accept and use context parameter
-- Fixed dangerous `os.Exit(1)` in goroutine - now uses proper logging
-- Fixed duplicate `rand` import conflict in stores/github/github.go
-- Fixed incorrect type reference in cmd/secretsync/main.go (`EventsConfig` → `EventServer`)
-- Fixed `metrics.Start()` call in main.go (function doesn't return error)
-- Fixed README typos ("syncronization" → "synchronization", "authoratative" → "authoritative")
-- Fixed README copy-paste error in Suspended section (showed wrong YAML example)
+- Cache invalidation after WriteSecret and DeleteSecret operations
+- Structured logging consistency
+- Error context in vault traversal with depth and count info
 
 ---
 
@@ -39,48 +54,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Current Maintainer
 - **Organization**: jbcom
-- **Repository**: [jbcom/jbcom-control-center](https://github.com/jbcom/jbcom-control-center)
-- **Package Path**: `packages/vault-secret-sync`
+- **Repository**: [jbcom/secretsync](https://github.com/jbcom/secretsync)
 
 ### Original Source
 - **Author**: Robert Lestak
-- **Repository**: [robertlestak/vault-secret-sync](https://github.com/jbcom/secretsync)
+- **Repository**: [robertlestak/vault-secret-sync](https://github.com/robertlestak/vault-secret-sync)
 - **License**: MIT
 
 ### Fork Rationale
 
-**WHY**: The jbcom infrastructure requires robust secret synchronization from HashiCorp Vault to multiple cloud providers (AWS, GCP, Azure, Doppler). The original vault-secret-sync provides an excellent foundation, but we needed:
-- Custom enhancements for Doppler integration
-- AWS Identity Center (SSO) account discovery
-- Tighter integration with our CI/CD and release processes
-- Code quality improvements and dead code removal
+This project is a complete rebranding and reimplementation of vault-secret-sync,
+focused on providing a streamlined, pipeline-based secret synchronization tool.
 
-**WHAT**: This fork includes all original functionality plus:
-- Doppler secret store support
-- AWS Identity Center dynamic account discovery
-- Enhanced error handling and context propagation
-- Comprehensive Helm charts for Kubernetes deployment
+**Key differences from upstream:**
+- Pipeline-driven architecture instead of Kubernetes operator
+- Support for dynamic AWS Organizations discovery
+- Enhanced merge strategies matching Python's deepmerge
+- Simplified configuration and deployment
+- GitHub Marketplace Action support
 
-**WHERE**: Integrated as a Go package within the jbcom-control-center monorepo at `packages/vault-secret-sync`.
+### License
 
-**HOW**: 
-1. Forked from upstream at commit `<original-commit>`
-2. Integrated into monorepo with proper CI/CD
-3. Applied code quality fixes addressing all AI reviewer feedback
-4. Enhanced with jbcom-specific features
+MIT License - see [LICENSE](LICENSE) for details.
 
-**WHEN**: December 2025
-
-### Contributing Back Upstream
-
-Fixes and improvements in this fork that would benefit the broader community should be contributed back to the original repository. Each contribution should be:
-- Isolated to a single concern
-- Well-documented with clear reasoning
-- Tested independently
-- Submitted as a targeted PR with appropriate context
-
-Candidates for upstream contribution:
-- Dead code removal (utils.go, gcp.go, vault.go)
-- Context propagation fixes (kube.go)
-- Error handling improvements (server.go)
-- Documentation fixes (README typos)
+Original work Copyright (c) Robert Lestak
+Modified work Copyright (c) 2025 jbcom
