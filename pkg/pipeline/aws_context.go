@@ -33,6 +33,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssoadmin"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/smithy-go"
+	"github.com/jbcom/secretsync/pkg/circuitbreaker"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -48,6 +49,10 @@ type AWSExecutionContext struct {
 	orgClient *organizations.Client
 	ssoClient *ssoadmin.Client
 	ssmClient *ssm.Client
+
+	// Circuit breakers for AWS API calls
+	orgBreaker *circuitbreaker.CircuitBreaker
+	stsBreaker *circuitbreaker.CircuitBreaker
 }
 
 // CallerIdentity contains AWS STS GetCallerIdentity information
@@ -100,6 +105,10 @@ func NewAWSExecutionContext(ctx context.Context, cfg *AWSConfig) (*AWSExecutionC
 		stsClient:  sts.NewFromConfig(awsCfg),
 	}
 
+	// Initialize circuit breakers for AWS API calls
+	ec.stsBreaker = circuitbreaker.New(circuitbreaker.DefaultConfig("aws-sts"))
+	ec.orgBreaker = circuitbreaker.New(circuitbreaker.DefaultConfig("aws-organizations"))
+
 	// Get caller identity
 	if err := ec.discoverCallerIdentity(ctx); err != nil {
 		return nil, fmt.Errorf("failed to get caller identity: %w", err)
@@ -124,11 +133,13 @@ func NewAWSExecutionContext(ctx context.Context, cfg *AWSConfig) (*AWSExecutionC
 	return ec, nil
 }
 
-// discoverCallerIdentity gets the current AWS identity
+// discoverCallerIdentity gets the current AWS identity with circuit breaker
 func (ec *AWSExecutionContext) discoverCallerIdentity(ctx context.Context) error {
-	output, err := ec.stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+	output, err := circuitbreaker.ExecuteTyped(ec.stsBreaker, ctx, func(ctx context.Context) (*sts.GetCallerIdentityOutput, error) {
+		return ec.stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+	})
 	if err != nil {
-		return err
+		return circuitbreaker.WrapError(err, ec.stsBreaker.Name(), ec.stsBreaker.State())
 	}
 
 	ec.CallerIdentity = &CallerIdentity{
@@ -148,10 +159,14 @@ func (ec *AWSExecutionContext) discoverOrganizationContext(ctx context.Context) 
 
 	ec.orgClient = organizations.NewFromConfig(ec.BaseConfig)
 
-	// Get organization info
-	orgOutput, err := ec.orgClient.DescribeOrganization(ctx, &organizations.DescribeOrganizationInput{})
+	// Get organization info with circuit breaker
+	orgOutput, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.DescribeOrganizationOutput, error) {
+		return ec.orgClient.DescribeOrganization(ctx, &organizations.DescribeOrganizationInput{})
+	})
 	if err != nil {
-		return fmt.Errorf("failed to describe organization: %w", err)
+		// Wrap with context, then check for circuit breaker errors
+		// WrapError now uses errors.Is so it works with wrapped errors
+		return circuitbreaker.WrapError(fmt.Errorf("failed to describe organization: %w", err), ec.orgBreaker.Name(), ec.orgBreaker.State())
 	}
 
 	org := orgOutput.Organization
@@ -188,17 +203,22 @@ func (ec *AWSExecutionContext) discoverDelegatedServices(ctx context.Context) er
 	paginator := organizations.NewListDelegatedAdministratorsPaginator(ec.orgClient, &organizations.ListDelegatedAdministratorsInput{})
 
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+		// Wrap AWS API call with circuit breaker
+		output, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListDelegatedAdministratorsOutput, error) {
+			return paginator.NextPage(ctx)
+		})
 		if err != nil {
-			return err
+			return circuitbreaker.WrapError(err, ec.orgBreaker.Name(), ec.orgBreaker.State())
 		}
 
 		for _, admin := range output.DelegatedAdministrators {
 			if aws.ToString(admin.Id) == ec.CallerIdentity.AccountID {
 				ec.OrganizationInfo.IsDelegatedAdmin = true
-				// Get services for this delegated admin
-				servicesOutput, err := ec.orgClient.ListDelegatedServicesForAccount(ctx, &organizations.ListDelegatedServicesForAccountInput{
-					AccountId: admin.Id,
+				// Get services for this delegated admin with circuit breaker
+				servicesOutput, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListDelegatedServicesForAccountOutput, error) {
+					return ec.orgClient.ListDelegatedServicesForAccount(ctx, &organizations.ListDelegatedServicesForAccountInput{
+						AccountId: admin.Id,
+					})
 				})
 				if err == nil {
 					for _, svc := range servicesOutput.DelegatedServices {
@@ -407,9 +427,11 @@ func (ec *AWSExecutionContext) ListOrganizationAccounts(ctx context.Context) ([]
 	paginator := organizations.NewListAccountsPaginator(ec.orgClient, &organizations.ListAccountsInput{})
 
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+		output, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListAccountsOutput, error) {
+			return paginator.NextPage(ctx)
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to list accounts: %w", err)
+			return nil, circuitbreaker.WrapError(fmt.Errorf("failed to list accounts: %w", err), ec.orgBreaker.Name(), ec.orgBreaker.State())
 		}
 
 		for _, acct := range output.Accounts {
@@ -440,9 +462,11 @@ func (ec *AWSExecutionContext) ListAccountsInOU(ctx context.Context, ouID string
 	})
 
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+		output, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListAccountsForParentOutput, error) {
+			return paginator.NextPage(ctx)
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to list accounts in OU %s: %w", ouID, err)
+			return nil, circuitbreaker.WrapError(fmt.Errorf("failed to list accounts in OU %s: %w", ouID, err), ec.orgBreaker.Name(), ec.orgBreaker.State())
 		}
 
 		for _, acct := range output.Accounts {
@@ -506,9 +530,11 @@ func (ec *AWSExecutionContext) GetAccountTags(ctx context.Context, accountID str
 	})
 
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+		output, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListTagsForResourceOutput, error) {
+			return paginator.NextPage(ctx)
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to list tags for account %s: %w", accountID, err)
+			return nil, circuitbreaker.WrapError(fmt.Errorf("failed to list tags for account %s: %w", accountID, err), ec.orgBreaker.Name(), ec.orgBreaker.State())
 		}
 
 		for _, tag := range output.Tags {
