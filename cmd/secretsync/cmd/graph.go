@@ -7,6 +7,7 @@ import (
 
 	"github.com/jbcom/secretsync/pkg/pipeline"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var graphCmd = &cobra.Command{
@@ -35,6 +36,7 @@ func init() {
 
 func runGraph(cmd *cobra.Command, args []string) error {
 	// Load config
+	cfgFile := viper.GetString("config")
 	cfg, err := pipeline.LoadConfig(cfgFile)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)

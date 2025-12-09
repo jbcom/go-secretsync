@@ -12,18 +12,8 @@ import (
 	"github.com/jbcom/secretsync/pkg/diff"
 	"github.com/jbcom/secretsync/pkg/pipeline"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	log "github.com/sirupsen/logrus"
-)
-
-var (
-	targets         string
-	mergeOnly       bool
-	syncOnly        bool
-	dryRun          bool
-	discoverTargets bool
-	outputFormat    string
-	computeDiff     bool
-	exitCodeMode    bool
 )
 
 // pipelineCmd runs the full merge-then-sync pipeline
@@ -67,29 +57,54 @@ Examples:
   secretsync pipeline --config config.yaml --merge-only
 
   # Compute diff even when applying changes (for audit trail)
-  secretsync pipeline --config config.yaml --diff`,
+  secretsync pipeline --config config.yaml --diff
+
+  # Using environment variables (Docker/CI friendly)
+  SECRETSYNC_CONFIG=config.yaml SECRETSYNC_DRY_RUN=true secretsync pipeline`,
 	RunE: runPipeline,
 }
 
 func init() {
 	rootCmd.AddCommand(pipelineCmd)
 
-	pipelineCmd.Flags().StringVar(&targets, "targets", "", "comma-separated list of targets (default: all)")
-	pipelineCmd.Flags().BoolVar(&mergeOnly, "merge-only", false, "only run merge phase")
-	pipelineCmd.Flags().BoolVar(&syncOnly, "sync-only", false, "only run sync phase")
-	pipelineCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode (no changes)")
-	pipelineCmd.Flags().BoolVar(&discoverTargets, "discover", false, "enable dynamic target discovery from AWS Organizations/Identity Center")
+	// All flags bound to viper for env var support (SECRETSYNC_* prefix)
+	pipelineCmd.Flags().String("targets", "", "comma-separated list of targets (default: all)")
+	pipelineCmd.Flags().Bool("merge-only", false, "only run merge phase")
+	pipelineCmd.Flags().Bool("sync-only", false, "only run sync phase")
+	pipelineCmd.Flags().Bool("dry-run", false, "dry run mode (no changes)")
+	pipelineCmd.Flags().Bool("discover", false, "enable dynamic target discovery from AWS Organizations/Identity Center")
 	
 	// Diff and output options
-	pipelineCmd.Flags().StringVarP(&outputFormat, "output", "o", "human", "output format: human, json, github, compact")
-	pipelineCmd.Flags().BoolVar(&computeDiff, "diff", false, "compute and show diff even when not in dry-run mode")
-	pipelineCmd.Flags().BoolVar(&exitCodeMode, "exit-code", false, "use exit codes: 0=no changes, 1=changes, 2=errors (useful for CI/CD)")
+	pipelineCmd.Flags().StringP("output", "o", "human", "output format: human, json, github, compact")
+	pipelineCmd.Flags().Bool("diff", false, "compute and show diff even when not in dry-run mode")
+	pipelineCmd.Flags().Bool("exit-code", false, "use exit codes: 0=no changes, 1=changes, 2=errors (useful for CI/CD)")
+
+	// Bind all flags to viper
+	viper.BindPFlag("targets", pipelineCmd.Flags().Lookup("targets"))
+	viper.BindPFlag("merge-only", pipelineCmd.Flags().Lookup("merge-only"))
+	viper.BindPFlag("sync-only", pipelineCmd.Flags().Lookup("sync-only"))
+	viper.BindPFlag("dry-run", pipelineCmd.Flags().Lookup("dry-run"))
+	viper.BindPFlag("discover", pipelineCmd.Flags().Lookup("discover"))
+	viper.BindPFlag("output", pipelineCmd.Flags().Lookup("output"))
+	viper.BindPFlag("diff", pipelineCmd.Flags().Lookup("diff"))
+	viper.BindPFlag("exit-code", pipelineCmd.Flags().Lookup("exit-code"))
 }
 
 func runPipeline(cmd *cobra.Command, args []string) error {
 	l := log.WithFields(log.Fields{
 		"action": "runPipeline",
 	})
+
+	// Read all config from viper (supports both flags and env vars)
+	cfgFile := viper.GetString("config")
+	targets := viper.GetString("targets")
+	mergeOnly := viper.GetBool("merge-only")
+	syncOnly := viper.GetBool("sync-only")
+	dryRun := viper.GetBool("dry-run")
+	discoverTargets := viper.GetBool("discover")
+	outputFormat := viper.GetString("output")
+	computeDiff := viper.GetBool("diff")
+	exitCodeMode := viper.GetBool("exit-code")
 
 	// Setup context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())

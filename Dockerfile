@@ -62,11 +62,10 @@ COPY --from=builder /out/secretsync /usr/local/bin/secretsync
 # Keep vss as a symlink for backwards compatibility
 RUN ln -s /usr/local/bin/secretsync /usr/local/bin/vss
 
-# Copy entrypoint script for GitHub Actions
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Don't set USER here - GitHub Actions may need root access
 # The action will run with the default user
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Run binary directly - all config via environment variables (SECRETSYNC_*)
+# No shell script needed - viper handles env var binding automatically
+ENTRYPOINT ["/usr/local/bin/secretsync"]
+CMD ["pipeline"]

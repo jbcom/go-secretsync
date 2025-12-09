@@ -7,6 +7,7 @@ import (
 
 	"github.com/jbcom/secretsync/pkg/pipeline"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var contextCmd = &cobra.Command{
@@ -38,6 +39,7 @@ func runContext(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
 	// Try to load config for AWS settings
+	cfgFile := viper.GetString("config")
 	var awsConfig *pipeline.AWSConfig
 	if cfgFile != "" {
 		cfg, err := pipeline.LoadConfig(cfgFile)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jbcom/secretsync/pkg/pipeline"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,6 +40,7 @@ func runValidate(cmd *cobra.Command, args []string) error {
 		"action": "runValidate",
 	})
 
+	cfgFile := viper.GetString("config")
 	fmt.Printf("Validating configuration: %s\n\n", cfgFile)
 
 	// Load config
