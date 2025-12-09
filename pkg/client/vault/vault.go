@@ -257,7 +257,13 @@ func (vc *VaultClient) GetKVSecretOnce(ctx context.Context, s string) (map[strin
 	if secret.Data["data"] == nil {
 		return nil, errors.New("secret data not found: " + s)
 	}
-	return secret.Data["data"].(map[string]interface{}), nil
+
+	// Type-safe extraction to prevent runtime panics
+	data, ok := secret.Data["data"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected data type in Vault response: got %T, expected map[string]interface{}", secret.Data["data"])
+	}
+	return data, nil
 }
 
 // GetKVSecret will login and retry secret access on failure
