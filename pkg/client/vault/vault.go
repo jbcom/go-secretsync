@@ -591,6 +591,8 @@ func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string
 
 // getMetadataPath converts a KV path to its metadata equivalent
 func (vc *VaultClient) getMetadataPath(path string) (string, error) {
+	// Normalize path by trimming trailing slashes to prevent empty segments
+	path = strings.TrimSuffix(path, "/")
 	pp := strings.Split(path, "/")
 	if len(pp) < 2 {
 		return "", errors.New("secret path must be in kv/path/to/secret format")
