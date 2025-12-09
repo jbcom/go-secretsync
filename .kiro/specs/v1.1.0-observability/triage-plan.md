@@ -227,15 +227,61 @@ PR #67 (Queue Compaction)
 
 ### PR #67 Review Comments
 
-**Status:** Needs review - check for blocking issues
+**Comment 1: Dependency Management Issue (Amazon Q)**
+- ❌ PR removes unrelated dependencies (Prometheus, NATS, GCP, etc.)
+- ✅ **Fix:** Revert go.mod changes, only change queue compaction logic
+- **Action:** Restore removed dependencies in go.mod
+
+**Comment 2: Division by Zero Risk (Amazon Q)**
+- ⚠️ Already handled in code (min threshold check exists)
+- ✅ **Status:** No action needed - code already prevents division by zero
+
+**Comment 3: Logic Looks Good (Amazon Q)**
+- ✅ Positive feedback on adaptive threshold logic
+- **Action:** None needed
 
 ### PR #68 Review Comments
 
-**Status:** Likely minor - review and address
+**Comment 1: Race Condition Risk (Amazon Q)**
+- ⚠️ Test accesses unexported `arnMu` field
+- ✅ **Status:** Acceptable - test validates mutex protection
+- **Action:** None needed - test correctly validates thread safety
 
-### PR #69-71 Review Comments
+**Comment 2: Test Robustness (Gemini)**
+- ⚠️ Test should verify copied map length/content
+- ✅ **Fix:** Add assertions for map length (100-200 range)
+- **Action:** Enhance test with `require.NotNil` and length checks
 
-**Status:** TBD - need to fetch review comments
+### PR #71 Review Comments
+
+**Comment 1: Leading Space Bug (Cursor)**
+- ❌ Error messages have leading space when requestID is empty
+- ✅ **Fix:** Use conditional spacing or `strings.Join` approach
+- **Action:** Refactor `ErrorBuilder.Build()` to use `strings.Join` (see Gemini suggestion)
+
+**Comment 2: Logic Error (Amazon Q)**
+- ❌ Same issue - malformed output with leading space
+- ✅ **Fix:** Implement proper spacing logic (see suggestion in comment)
+- **Action:** Same as Comment 1
+
+**Comment 3: Crash Risk (Amazon Q)**
+- ❌ Type assertion without nil check can panic
+- ✅ **Fix:** Add nil check: `if !ok || reqCtx == nil { return nil }`
+- **Action:** Update `FromContext()` in `request_context.go`
+
+**Comment 4: String Building Efficiency (Gemini)**
+- ⚠️ Multiple string concatenations inefficient
+- ✅ **Fix:** Use `strings.Join` with slice (see suggestion)
+- **Action:** Same as Comment 1
+
+**Comment 5: Test Clarity (Gemini)**
+- ⚠️ Table-driven test has special case logic
+- ✅ **Fix:** Refactor to use sub-tests for clarity
+- **Action:** Refactor `TestGetRequestID` to use `t.Run()` sub-tests
+
+### PR #69 Review Comments
+
+**Status:** No review comments yet - needs initial review
 
 ## Action Plan
 
