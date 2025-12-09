@@ -140,6 +140,7 @@ pkg/
 - Prepare for v1.1.0 release
 
 ---
+<<<<<<< HEAD
 
 ### Session: 2024-12-09 - Dependency Management and Issue Triage
 
@@ -244,13 +245,14 @@ pkg/
 
 ---
 
-*Last updated: 2024-12-09*
-## Progress Update: 2025-12-09
-- PR #68: Enhanced test robustness, ready for merge
-- PR #64: Fixed critical action.yml placeholder issue
-- PR #71: Fixed error formatting and type assertion safety
-- PR #67: Restored unrelated dependencies
+*Last updated: 2025-12-09*
 
+## Progress Update: 2025-12-09
+- PR #68: Enhanced test robustness merged
+- PR #64: Docker image pinning merged
+- PR #71: Error formatting and type assertion safety merged
+- PR #67: Queue compaction threshold merged
+- Circuit breaker work integrated (PR #70 closed after cherry-pick)
 
 ## Session Progress: 2025-12-09
 
@@ -258,16 +260,15 @@ pkg/
 - **PR #68**: Enhanced test robustness (DeepCopyConcurrentSafety)
 - **PR #64**: Fixed critical action.yml placeholder digest issue
 - **PR #71**: Fixed error message formatting and type assertion safety
-- **PR #67**: Restored unrelated dependencies removed in queue compaction PR
-- **PR #70**: Wrapped Organizations paginator operations with circuit breakers, fixed nil breaker issues
+- **PR #67**: Adaptive queue compaction threshold
+- **PR #70**: Circuit breaker across Vault/AWS/S3 with nil-breaker fixes
 
 ### Key Fixes
-- Organizations: ListAccounts, ListAccountsForParent, ListTagsForResource now wrapped
-- VaultClient/AwsClient: Added ensureBreaker() to handle nil breakers in tests
-- Error context: Fixed leading space bug, improved strings.Join usage
-- Action.yml: Reverted placeholder digest to working tag reference
+- Organizations paginators wrapped with circuit breakers
+- VaultClient/AwsClient: sync.Once ensureBreaker to avoid races
+- Error context: leading space bug fixed, strings.Join formatting
+- action.yml: stable tag reference; digest automation deferred
 
 ### Next Steps
-- PR #69: Observability metrics (needs tests/docs)
-- Review and merge completed PRs
-- Continue with remaining v1.1.0 work
+- PR #69: Observability metrics/docs/tests to finish and merge
+- Release PR #61: finalize after #69, then tag v1.1.0

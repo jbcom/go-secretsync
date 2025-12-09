@@ -201,6 +201,65 @@ docker run -v $(pwd)/config.yaml:/config.yaml \
 # Multi-arch images available: linux/amd64, linux/arm64
 ```
 
+## Observability
+
+SecretSync exposes Prometheus metrics for production monitoring and debugging.
+
+### Enabling Metrics
+
+```bash
+# Enable metrics server on port 9090
+secretsync pipeline --config config.yaml --metrics-port 9090
+
+# Custom address and port
+secretsync pipeline --config config.yaml --metrics-addr 0.0.0.0 --metrics-port 9090
+```
+
+### Available Metrics
+
+**Vault Metrics:**
+- `secretsync_vault_api_call_duration_seconds` - Vault API call latency
+- `secretsync_vault_secrets_listed_total` - Total secrets listed from Vault
+- `secretsync_vault_traversal_depth` - BFS traversal depth reached
+- `secretsync_vault_queue_size` - Current traversal queue size
+- `secretsync_vault_errors_total` - Vault error count by operation/type
+
+**AWS Metrics:**
+- `secretsync_aws_api_call_duration_seconds` - AWS API call latency
+- `secretsync_aws_pagination_pages` - Number of pagination pages processed
+- `secretsync_aws_cache_hits_total` - Cache hit count
+- `secretsync_aws_cache_misses_total` - Cache miss count
+- `secretsync_aws_secrets_operations_total` - Secret operations (create/update/delete)
+
+**Pipeline Metrics:**
+- `secretsync_pipeline_execution_duration_seconds` - Pipeline phase duration
+- `secretsync_pipeline_targets_processed_total` - Targets processed by phase
+- `secretsync_pipeline_parallel_workers` - Active parallel workers
+- `secretsync_pipeline_errors_total` - Pipeline error count
+
+**S3 Metrics:**
+- `secretsync_s3_operation_duration_seconds` - S3 operation latency
+- `secretsync_s3_object_size_bytes` - S3 object sizes
+
+### Prometheus Configuration
+
+```yaml
+scrape_configs:
+  - job_name: 'secretsync'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: '/metrics'
+```
+
+### Health Check
+
+The metrics server also exposes a `/health` endpoint:
+
+```bash
+curl http://localhost:9090/health
+# Returns: OK
+```
+
 ## Development
 
 ```bash

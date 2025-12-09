@@ -12,6 +12,7 @@ import (
 
 	"github.com/jbcom/secretsync/pkg/circuitbreaker"
 	"github.com/jbcom/secretsync/pkg/driver"
+	"github.com/jbcom/secretsync/pkg/observability"
 	"github.com/jbcom/secretsync/pkg/utils"
 	log "github.com/sirupsen/logrus"
 
@@ -251,6 +252,12 @@ func insertSliceString(a []string, index int, value string) []string {
 
 // GetKVSecret retrieves a kv secret from vault with circuit breaker
 func (vc *VaultClient) GetKVSecretOnce(ctx context.Context, s string) (map[string]interface{}, error) {
+	startTime := time.Now()
+	status := "error"
+	defer func() {
+		observability.RecordDuration(observability.VaultAPICallDuration, startTime, "get_secret", status)
+	}()
+
 	l := log.WithFields(log.Fields{
 		"address": vc.Address,
 		"role":    vc.Role,
@@ -259,10 +266,12 @@ func (vc *VaultClient) GetKVSecretOnce(ctx context.Context, s string) (map[strin
 	})
 	var secrets map[string]interface{}
 	if s == "" {
+		observability.RecordError(observability.VaultErrors, "get_secret", "invalid_path")
 		return secrets, errors.New("secret path required")
 	}
 	ss := strings.Split(s, "/")
 	if len(ss) < 2 {
+		observability.RecordError(observability.VaultErrors, "get_secret", "invalid_path")
 		return secrets, errors.New("secret path must be in kv/path/to/secret format")
 	}
 	ss = insertSliceString(ss, 1, "data")
@@ -270,6 +279,7 @@ func (vc *VaultClient) GetKVSecretOnce(ctx context.Context, s string) (map[strin
 	c := vc.Client.Logical()
 	s = strings.Join(ss, "/")
 	if c == nil {
+		observability.RecordError(observability.VaultErrors, "get_secret", "not_initialized")
 		return secrets, errors.New("vault client not initialized")
 	}
 	
@@ -281,23 +291,28 @@ func (vc *VaultClient) GetKVSecretOnce(ctx context.Context, s string) (map[strin
 		return c.ReadWithContext(ctx, s)
 	})
 	if err != nil {
+		observability.RecordError(observability.VaultErrors, "get_secret", "api_error")
 		return secrets, circuitbreaker.WrapError(err, vc.breaker.Name(), vc.breaker.State())
 	}
 	
 	secret := result
 	if secret == nil || secret.Data == nil {
+		observability.RecordError(observability.VaultErrors, "get_secret", "not_found")
 		return nil, errors.New("secret not found: " + s)
 	}
 	l.Tracef("secret=%+v", secret)
 	if secret.Data["data"] == nil {
+		observability.RecordError(observability.VaultErrors, "get_secret", "no_data")
 		return nil, errors.New("secret data not found: " + s)
 	}
 
 	// Type-safe extraction to prevent runtime panics
 	data, ok := secret.Data["data"].(map[string]interface{})
 	if !ok {
+		observability.RecordError(observability.VaultErrors, "get_secret", "invalid_type")
 		return nil, fmt.Errorf("unexpected data type in Vault response: got %T, expected map[string]interface{}", secret.Data["data"])
 	}
+	status = "success"
 	return data, nil
 }
 
@@ -589,6 +604,12 @@ func (vc *VaultClient) ListSecretsOnce(ctx context.Context, p string) ([]string,
 
 // listSecretsRecursive performs breadth-first search to discover all nested secrets
 func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string) ([]string, error) {
+	startTime := time.Now()
+	defer func() {
+		status := "success"
+		observability.RecordDuration(observability.VaultAPICallDuration, startTime, "list_secrets", status)
+	}()
+
 	l := log.WithFields(log.Fields{
 		"address": vc.Address,
 		"role":    vc.Role,
@@ -615,6 +636,10 @@ func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string
 	queueIdx := 0
 
 	for queueIdx < len(queue) {
+		// Track queue size
+		queueSize := len(queue) - queueIdx
+		observability.VaultQueueSize.WithLabelValues(basePath).Set(float64(queueSize))
+
 		// Check for context cancellation
 		select {
 		case <-ctx.Done():
@@ -639,7 +664,10 @@ func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string
 
 		// Check depth limit as safety measure
 		depth := strings.Count(strings.TrimPrefix(currentPath, basePath), "/")
+		observability.VaultTraversalDepth.WithLabelValues(basePath).Observe(float64(depth))
+
 		if depth > maxDepth {
+			observability.RecordError(observability.VaultErrors, "list_secrets", "max_depth_exceeded")
 			return nil, fmt.Errorf("max traversal depth %d exceeded at path %q (base: %q, found %d secrets so far)",
 				maxDepth, currentPath, basePath, len(allSecrets))
 		}
@@ -660,10 +688,12 @@ func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string
 				// 403 (Forbidden) and 404 (Not Found) are expected for inaccessible paths
 				if respErr.StatusCode == 403 || respErr.StatusCode == 404 {
 					l.WithError(err).Debugf("Skipping inaccessible path (HTTP %d): %s", respErr.StatusCode, metadataPath)
+					observability.RecordError(observability.VaultErrors, "list_path", "access_denied")
 					continue
 				}
 			}
 			// Network, authentication, or other critical errors should propagate
+			observability.RecordError(observability.VaultErrors, "list_path", "api_error")
 			return nil, fmt.Errorf("failed to list path %q (depth %d, %d secrets found so far): %w",
 				metadataPath, depth, len(allSecrets), err)
 		}
@@ -711,6 +741,9 @@ func (vc *VaultClient) listSecretsRecursive(ctx context.Context, basePath string
 			}
 		}
 	}
+
+	// Record successful listing metrics
+	observability.VaultSecretsListed.WithLabelValues(basePath).Add(float64(len(allSecrets)))
 
 	return allSecrets, nil
 }

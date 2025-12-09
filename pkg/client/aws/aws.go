@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/jbcom/secretsync/pkg/circuitbreaker"
 	"github.com/jbcom/secretsync/pkg/driver"
+	"github.com/jbcom/secretsync/pkg/observability"
 	"github.com/jbcom/secretsync/pkg/utils"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -369,6 +370,14 @@ func (c *AwsClient) updateSecret(ctx context.Context, name string, secret []byte
 }
 
 func (g *AwsClient) WriteSecret(ctx context.Context, meta metav1.ObjectMeta, path string, secrets []byte) ([]byte, error) {
+	startTime := time.Now()
+	status := "error"
+	operation := "create"
+	defer func() {
+		observability.RecordDuration(observability.AWSAPICallDuration, startTime, "write_secret", g.Region, status)
+		observability.AWSSecretsOperations.WithLabelValues(operation, status).Inc()
+	}()
+
 	l := log.WithFields(log.Fields{
 		"action":        "WriteSecret",
 		"driver":        g.Driver(),
@@ -399,6 +408,7 @@ func (g *AwsClient) WriteSecret(ctx context.Context, meta metav1.ObjectMeta, pat
 	arn, ok := g.accountSecretArns[path]
 	g.arnMu.RUnlock()
 	if ok {
+		operation = "update"
 		// Idempotency: skip if value unchanged
 		if g.SkipUnchanged {
 			existingValue, err := g.getSecretValue(ctx, arn)
@@ -410,6 +420,8 @@ func (g *AwsClient) WriteSecret(ctx context.Context, meta metav1.ObjectMeta, pat
 					l.WithError(err).Debug("Error comparing secrets")
 				} else if equal {
 					l.Debug("Secret unchanged, skipping update")
+					operation = "skip"
+					status = "success"
 					return nil, nil
 				}
 			}
@@ -431,6 +443,7 @@ func (g *AwsClient) WriteSecret(ctx context.Context, meta metav1.ObjectMeta, pat
 	// Invalidate cache after successful write to ensure consistency
 	g.ClearCache()
 
+	status = "success"
 	return nil, nil
 }
 
@@ -473,6 +486,13 @@ func (g *AwsClient) getSecretValue(ctx context.Context, arn string) ([]byte, err
 }
 
 func (g *AwsClient) DeleteSecret(ctx context.Context, secret string) error {
+	startTime := time.Now()
+	status := "error"
+	defer func() {
+		observability.RecordDuration(observability.AWSAPICallDuration, startTime, "delete_secret", g.Region, status)
+		observability.AWSSecretsOperations.WithLabelValues("delete", status).Inc()
+	}()
+
 	l := log.WithFields(log.Fields{
 		"action": "DeleteSecret",
 		"driver": g.Driver(),
@@ -501,10 +521,17 @@ func (g *AwsClient) DeleteSecret(ctx context.Context, secret string) error {
 	// Invalidate cache after successful delete
 	g.ClearCache()
 
+	status = "success"
 	return nil
 }
 
 func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error) {
+	startTime := time.Now()
+	status := "error"
+	defer func() {
+		observability.RecordDuration(observability.AWSAPICallDuration, startTime, "list_secrets", g.Region, status)
+	}()
+
 	l := log.WithFields(log.Fields{
 		"action":         "ListSecrets",
 		"noEmptySecrets": g.NoEmptySecrets,
@@ -521,9 +548,12 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 			cached := make([]string, len(g.cachedSecrets))
 			copy(cached, g.cachedSecrets)
 			g.cacheMu.RUnlock()
+			observability.AWSCacheHits.WithLabelValues("list_secrets").Inc()
+			status = "success"
 			return cached, nil
 		}
 		g.cacheMu.RUnlock()
+		observability.AWSCacheMisses.WithLabelValues("list_secrets").Inc()
 	}
 
 	// Cache miss or disabled - fetch from AWS
@@ -533,6 +563,7 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 	secretsList := []string{}
 	var nextToken *string
 	arnMap := make(map[string]string)
+	pageCount := 0
 	for {
 		params := &secretsmanager.ListSecretsInput{
 			NextToken: nextToken,
@@ -552,7 +583,8 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 			l.Debugf("error: %v", err)
 			return nil, circuitbreaker.WrapError(err, g.breaker.Name(), g.breaker.State())
 		}
-		
+
+		pageCount++
 		for _, secret := range resp.SecretList {
 			secretName := *secret.Name
 
@@ -577,6 +609,10 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 		}
 		nextToken = resp.NextToken
 	}
+	
+	// Record pagination metrics
+	observability.AWSPaginationCount.WithLabelValues("list_secrets").Observe(float64(pageCount))
+
 	g.arnMu.Lock()
 	g.accountSecretArns = arnMap
 	g.arnMu.Unlock()
@@ -591,6 +627,7 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 		g.cacheMu.Unlock()
 	}
 
+	status = "success"
 	return secretsList, nil
 }
 
