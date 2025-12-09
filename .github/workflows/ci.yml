@@ -63,12 +63,9 @@ jobs:
           AWS_REGION: us-east-1
           VAULT_ADDR: http://localhost:8200
           VAULT_TOKEN: test-root-token
-        run: go test -v -race -coverprofile=coverage.out ./...
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage.out
+        # Note: Coverage disabled due to Go toolchain version mismatch
+        # (go test -coverprofile fails with "no such tool covdata")
+        run: go test -v -race ./...
 
   # ============================================
   # LINT (TEMPORARILY DISABLED)
