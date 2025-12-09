@@ -21,7 +21,7 @@
 //	          ▼                         ▼                         ▼
 //	┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
 //	│   CLI Runner    │       │  K8s Operator   │       │  Vault Events   │
-//	│  (vss pipeline) │       │  (CRD watch)    │       │  (webhook)      │
+//	│  (secretsync pipeline) │       │  (CRD watch)    │       │  (webhook)      │
 //	└─────────────────┘       └─────────────────┘       └─────────────────┘
 //
 // Operations:

@@ -25,7 +25,7 @@ func handleSyncError(ctx context.Context, err error, j SyncJob, startTime time.T
 	if notifyErr := notifications.Trigger(ctx, v1alpha1.NotificationMessage{
 		Message:         fmt.Sprintf("error syncing: %s", err),
 		Event:           v1alpha1.NotificationEventSyncFailure,
-		VaultSecretSync: j.SyncConfig,
+		SecretSync: j.SyncConfig,
 	}); notifyErr != nil {
 		l.WithError(notifyErr).Error("failed to send notification")
 	}
@@ -45,7 +45,7 @@ func handleSyncSuccess(ctx context.Context, j SyncJob, startTime time.Time) erro
 	if notifyErr := notifications.Trigger(ctx, v1alpha1.NotificationMessage{
 		Message:         "sync success",
 		Event:           v1alpha1.NotificationEventSyncSuccess,
-		VaultSecretSync: j.SyncConfig,
+		SecretSync: j.SyncConfig,
 	}); notifyErr != nil {
 		l.WithError(notifyErr).Error("failed to send notification")
 	}

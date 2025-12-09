@@ -34,7 +34,7 @@ func clientGenerator(ctx context.Context, j SyncJob) (*SyncClients, error) {
 	return scs, nil
 }
 
-func setStoreGlobalDefaults(s *v1alpha1.VaultSecretSync) error {
+func setStoreGlobalDefaults(s *v1alpha1.SecretSync) error {
 	l := log.WithFields(log.Fields{
 		"action": "setStoreGlobalDefaults",
 	})
@@ -73,7 +73,7 @@ func setStoreGlobalDefaults(s *v1alpha1.VaultSecretSync) error {
 	return nil
 }
 
-func InitSyncConfigClients(sc v1alpha1.VaultSecretSync) (*SyncClients, error) {
+func InitSyncConfigClients(sc v1alpha1.SecretSync) (*SyncClients, error) {
 	l := log.WithFields(log.Fields{
 		"action": "sc.InitSyncConfigClients",
 	})

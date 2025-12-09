@@ -12,7 +12,7 @@ import (
 
 var (
 	B             Backend
-	ManualTrigger func(ctx context.Context, cfg v1alpha1.VaultSecretSync, op logical.Operation) error
+	ManualTrigger func(ctx context.Context, cfg v1alpha1.SecretSync, op logical.Operation) error
 )
 
 const (

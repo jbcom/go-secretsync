@@ -19,16 +19,16 @@ func TestRenderTemplate_Success(t *testing.T) {
 		Path:    "secret/data",
 	}
 
-	vaultSecretSync := v1alpha1.VaultSecretSync{
+	syncConfig := v1alpha1.SecretSync{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "VaultSecretSync",
-			APIVersion: "vaultsecretsync.lestak.sh/v1alpha1",
+			Kind:       "SecretSync",
+			APIVersion: "secretsync.jbcom.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-vaultsecretsync",
+			Name:      "example-secretsync",
 			Namespace: "default",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: vaultClient,
 			Dest: []*v1alpha1.StoreConfig{
 				{
@@ -41,7 +41,7 @@ func TestRenderTemplate_Success(t *testing.T) {
 			SyncDelete: new(bool),
 			DryRun:     new(bool),
 		},
-		Status: v1alpha1.VaultSecretSyncStatus{
+		Status: v1alpha1.SecretSyncStatus{
 			Status: "success",
 		},
 	}
@@ -49,25 +49,25 @@ func TestRenderTemplate_Success(t *testing.T) {
 	notificationMessage := v1alpha1.NotificationMessage{
 		Event:           v1alpha1.NotificationEventSyncSuccess,
 		Message:         "Sync completed successfully",
-		VaultSecretSync: vaultSecretSync,
+		SecretSync: syncConfig,
 	}
 
 	templateString := `
 Event: {{.Event}}
 Message: {{.Message}}
-VaultSecretSync:
-  Name: {{.VaultSecretSync.ObjectMeta.Name}}
-  Namespace: {{.VaultSecretSync.ObjectMeta.Namespace}}
-  Source Address: {{.VaultSecretSync.Spec.Source.Address}}
-  Destination: {{range .VaultSecretSync.Spec.Dest}}{{.AWS.Name}} ({{.AWS.Region}}){{end}}
-  Status: {{.VaultSecretSync.Status.Status}}
+SecretSync:
+  Name: {{.SecretSync.ObjectMeta.Name}}
+  Namespace: {{.SecretSync.ObjectMeta.Namespace}}
+  Source Address: {{.SecretSync.Spec.Source.Address}}
+  Destination: {{range .SecretSync.Spec.Dest}}{{.AWS.Name}} ({{.AWS.Region}}){{end}}
+  Status: {{.SecretSync.Status.Status}}
 `
 
 	expectedOutput := `
 Event: success
 Message: Sync completed successfully
-VaultSecretSync:
-  Name: example-vaultsecretsync
+SecretSync:
+  Name: example-secretsync
   Namespace: default
   Source Address: http://vault.example.com
   Destination: secret/data (us-east-1)
@@ -85,16 +85,16 @@ func TestRenderTemplate_WithJSON(t *testing.T) {
 		Path:    "secret/data",
 	}
 
-	vaultSecretSync := v1alpha1.VaultSecretSync{
+	syncConfig := v1alpha1.SecretSync{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "VaultSecretSync",
-			APIVersion: "vaultsecretsync.lestak.sh/v1alpha1",
+			Kind:       "SecretSync",
+			APIVersion: "secretsync.jbcom.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-vaultsecretsync",
+			Name:      "example-secretsync",
 			Namespace: "default",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: vaultClient,
 			Dest: []*v1alpha1.StoreConfig{
 				{
@@ -107,7 +107,7 @@ func TestRenderTemplate_WithJSON(t *testing.T) {
 			SyncDelete: new(bool),
 			DryRun:     new(bool),
 		},
-		Status: v1alpha1.VaultSecretSyncStatus{
+		Status: v1alpha1.SecretSyncStatus{
 			Status: "success",
 		},
 	}
@@ -115,19 +115,19 @@ func TestRenderTemplate_WithJSON(t *testing.T) {
 	notificationMessage := v1alpha1.NotificationMessage{
 		Event:           v1alpha1.NotificationEventSyncSuccess,
 		Message:         "Sync completed successfully",
-		VaultSecretSync: vaultSecretSync,
+		SecretSync: syncConfig,
 	}
 
 	templateString := `
 Event: {{.Event}}
-VaultSecretSync JSON: {{json .VaultSecretSync}}
+SecretSync JSON: {{json .SecretSync}}
 `
 
-	vaultSecretSyncJSON, _ := json.Marshal(notificationMessage.VaultSecretSync)
+	syncConfigJSON, _ := json.Marshal(notificationMessage.SecretSync)
 	expectedOutput := fmt.Sprintf(`
 Event: success
-VaultSecretSync JSON: %s
-`, vaultSecretSyncJSON)
+SecretSync JSON: %s
+`, syncConfigJSON)
 
 	output, err := renderTemplate(templateString, notificationMessage)
 	assert.NoError(t, err)
@@ -135,20 +135,20 @@ VaultSecretSync JSON: %s
 }
 
 func TestRenderTemplate_EmptyValues(t *testing.T) {
-	vaultSecretSync := v1alpha1.VaultSecretSync{
+	syncConfig := v1alpha1.SecretSync{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "VaultSecretSync",
-			APIVersion: "vaultsecretsync.lestak.sh/v1alpha1",
+			Kind:       "SecretSync",
+			APIVersion: "secretsync.jbcom.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "",
 			Namespace: "",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: nil,
 			Dest:   nil,
 		},
-		Status: v1alpha1.VaultSecretSyncStatus{
+		Status: v1alpha1.SecretSyncStatus{
 			Status: "",
 		},
 	}
@@ -156,24 +156,24 @@ func TestRenderTemplate_EmptyValues(t *testing.T) {
 	notificationMessage := v1alpha1.NotificationMessage{
 		Event:           v1alpha1.NotificationEventSyncFailure,
 		Message:         "Sync failed",
-		VaultSecretSync: vaultSecretSync,
+		SecretSync: syncConfig,
 	}
 
 	templateString := `
 Event: {{.Event}}
 Message: {{.Message}}
-VaultSecretSync:
-  Name: {{.VaultSecretSync.ObjectMeta.Name}}
-  Namespace: {{.VaultSecretSync.ObjectMeta.Namespace}}
-  Source Address: {{if .VaultSecretSync.Spec.Source}}{{.VaultSecretSync.Spec.Source.Address}}{{else}}<no value>{{end}}
-  Destination: {{if .VaultSecretSync.Spec.Dest}}{{range .VaultSecretSync.Spec.Dest}}{{.AWS.Name}} ({{.AWS.Region}}){{end}}{{else}}<no value>{{end}}
-  Status: {{.VaultSecretSync.Status.Status}}
+SecretSync:
+  Name: {{.SecretSync.ObjectMeta.Name}}
+  Namespace: {{.SecretSync.ObjectMeta.Namespace}}
+  Source Address: {{if .SecretSync.Spec.Source}}{{.SecretSync.Spec.Source.Address}}{{else}}<no value>{{end}}
+  Destination: {{if .SecretSync.Spec.Dest}}{{range .SecretSync.Spec.Dest}}{{.AWS.Name}} ({{.AWS.Region}}){{end}}{{else}}<no value>{{end}}
+  Status: {{.SecretSync.Status.Status}}
 `
 
 	expectedOutput := `
 Event: failure
 Message: Sync failed
-VaultSecretSync:
+SecretSync:
   Name: 
   Namespace: 
   Source Address: <no value>

@@ -45,7 +45,7 @@ func triggerWebhook(ctx context.Context, message v1alpha1.NotificationMessage, w
 		return fmt.Errorf("failed to create webhook request: %v", err)
 	}
 	if webhook.HeaderSecret != nil && *webhook.HeaderSecret != "" {
-		sc, err := kubesecret.GetSecret(ctx, message.VaultSecretSync.Namespace, *webhook.HeaderSecret)
+		sc, err := kubesecret.GetSecret(ctx, message.SecretSync.Namespace, *webhook.HeaderSecret)
 		if err != nil {
 			l.WithError(err).Error("failed to get secret for webhook headers")
 			return err
@@ -71,8 +71,8 @@ func triggerWebhook(ctx context.Context, message v1alpha1.NotificationMessage, w
 		if err != nil {
 			if writeErr := backend.WriteEvent(
 				ctx,
-				message.VaultSecretSync.Namespace,
-				message.VaultSecretSync.Name,
+				message.SecretSync.Namespace,
+				message.SecretSync.Name,
 				"Warning",
 				string(backend.SyncStatusFailed),
 				fmt.Sprintf("webhook request failed with status %d", resp.StatusCode),
@@ -84,8 +84,8 @@ func triggerWebhook(ctx context.Context, message v1alpha1.NotificationMessage, w
 		}
 		if writeErr := backend.WriteEvent(
 			ctx,
-			message.VaultSecretSync.Namespace,
-			message.VaultSecretSync.Name,
+			message.SecretSync.Namespace,
+			message.SecretSync.Name,
 			"Warning",
 			string(backend.SyncStatusFailed),
 			fmt.Sprintf("webhook request failed with status %d: %s", resp.StatusCode, body),
@@ -96,8 +96,8 @@ func triggerWebhook(ctx context.Context, message v1alpha1.NotificationMessage, w
 	}
 	if writeErr := backend.WriteEvent(
 		ctx,
-		message.VaultSecretSync.Namespace,
-		message.VaultSecretSync.Name,
+		message.SecretSync.Namespace,
+		message.SecretSync.Name,
 		"Normal",
 		"WebhookSent",
 		"webhook request successful",
@@ -127,14 +127,14 @@ func handleWebhooks(ctx context.Context, message v1alpha1.NotificationMessage) e
 		"pkg":              "notifications",
 		"action":           "notifications.handleWebhooks",
 		"notificationType": "webhooks",
-		"syncConfig":       message.VaultSecretSync.Name,
-		"syncNamespace":    message.VaultSecretSync.Namespace,
+		"syncConfig":       message.SecretSync.Name,
+		"syncNamespace":    message.SecretSync.Namespace,
 	})
 	l.Trace("start")
 	defer l.Trace("end")
 	jobsToDo := []webhookJob{}
 NotifLoop:
-	for _, webhook := range message.VaultSecretSync.Spec.Notifications {
+	for _, webhook := range message.SecretSync.Spec.Notifications {
 		if webhook.Webhook == nil {
 			l.Debugf("skipping webhook notification: %v", webhook)
 			continue NotifLoop

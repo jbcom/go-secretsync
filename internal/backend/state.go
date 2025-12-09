@@ -13,19 +13,19 @@ import (
 
 type TenantName string
 type TenantNamespace string
-type TenantSyncs map[TenantNamespace][]v1alpha1.VaultSecretSync
+type TenantSyncs map[TenantNamespace][]v1alpha1.SecretSync
 
 var (
-	SyncConfigs map[string]v1alpha1.VaultSecretSync
+	SyncConfigs map[string]v1alpha1.SecretSync
 	SyncMaps    map[TenantName]TenantSyncs
 )
 
 func init() {
-	SyncConfigs = make(map[string]v1alpha1.VaultSecretSync)
+	SyncConfigs = make(map[string]v1alpha1.SecretSync)
 	SyncMaps = make(map[TenantName]TenantSyncs)
 }
 
-func addToSyncMaps(config v1alpha1.VaultSecretSync) {
+func addToSyncMaps(config v1alpha1.SecretSync) {
 	tenant, namespace, _ := SourceTenantNamespace(config)
 	tn := TenantName(tenant)
 	tns := TenantNamespace(namespace)
@@ -36,7 +36,7 @@ func addToSyncMaps(config v1alpha1.VaultSecretSync) {
 	SyncMaps[tn][tns] = append(SyncMaps[tn][tns], config)
 }
 
-func removeFromSyncMaps(config v1alpha1.VaultSecretSync) {
+func removeFromSyncMaps(config v1alpha1.SecretSync) {
 	tenant, namespace, _ := SourceTenantNamespace(config)
 	tn := TenantName(tenant)
 	tns := TenantNamespace(namespace)
@@ -59,7 +59,7 @@ func removeFromSyncMaps(config v1alpha1.VaultSecretSync) {
 	}
 }
 
-func SourceTenantNamespace(sc v1alpha1.VaultSecretSync) (string, string, error) {
+func SourceTenantNamespace(sc v1alpha1.SecretSync) (string, string, error) {
 	if sc.Spec.Source == nil {
 		return "", "", errors.New("source is nil")
 	}
@@ -74,15 +74,15 @@ func SourceTenantNamespace(sc v1alpha1.VaultSecretSync) (string, string, error) 
 	return tenant, namespace, nil
 }
 
-func GetSyncConfigByName(name string) (v1alpha1.VaultSecretSync, error) {
+func GetSyncConfigByName(name string) (v1alpha1.SecretSync, error) {
 	v, ok := SyncConfigs[name]
 	if ok {
 		return v, nil
 	}
-	return v1alpha1.VaultSecretSync{}, errors.New("no config found")
+	return v1alpha1.SecretSync{}, errors.New("no config found")
 }
 
-func TenantNamespaceConfigs(evt event.VaultEvent) []v1alpha1.VaultSecretSync {
+func TenantNamespaceConfigs(evt event.VaultEvent) []v1alpha1.SecretSync {
 	l := log.WithFields(log.Fields{
 		"action":  "TenantNamespaceConfigs",
 		"eventId": evt.ID,
@@ -98,7 +98,7 @@ func TenantNamespaceConfigs(evt event.VaultEvent) []v1alpha1.VaultSecretSync {
 	defer l.Trace("end")
 	tn := TenantName(evt.Address)
 	tns := TenantNamespace(ns)
-	var result []v1alpha1.VaultSecretSync
+	var result []v1alpha1.SecretSync
 	if tenantSyncs, ok := SyncMaps[tn]; ok {
 		if namespaceSyncs, ok := tenantSyncs[tns]; ok {
 			result = append(result, namespaceSyncs...)
@@ -107,7 +107,7 @@ func TenantNamespaceConfigs(evt event.VaultEvent) []v1alpha1.VaultSecretSync {
 	return result
 }
 
-func AddSyncConfig(s v1alpha1.VaultSecretSync) error {
+func AddSyncConfig(s v1alpha1.SecretSync) error {
 	internalName := InternalName(s.Namespace, s.Name)
 
 	// Check if the config already exists

@@ -16,64 +16,64 @@ var (
 	Health              *ServiceHealth
 	healthMutex         sync.Mutex
 	ServiceHealthMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "vault_secret_sync_service_health",
+		Name: "secretsync_service_health",
 		Help: "The health of the service",
 	}, []string{"service"})
 	ActiveSyncs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "vault_secret_sync_active_syncs",
+		Name: "secretsync_active_syncs",
 		Help: "The number of active syncs",
 	}, []string{"namespace", "name"})
 	SyncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "vault_secret_sync_sync_duration",
+		Name:    "secretsync_sync_duration",
 		Help:    "The duration of a sync",
 		Buckets: prometheus.ExponentialBuckets(1, 2, 10),
 	}, []string{"namespace", "name"})
 	SyncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "vault_secret_sync_sync_errors",
+		Name: "secretsync_sync_errors",
 		Help: "The number of sync errors",
 	}, []string{"namespace", "name"})
 	SyncsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "vault_secret_sync_syncs_total",
+		Name: "secretsync_syncs_total",
 		Help: "The total number of syncs",
 	}, []string{"namespace", "name"})
 	SyncStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "vault_secret_sync_sync_status",
+		Name: "secretsync_sync_status",
 		Help: "The status of a sync",
 	}, []string{"namespace", "name"})
 	EventHandlerRequests = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "vault_secret_sync_event_handler_requests",
+		Name: "secretsync_event_handler_requests",
 		Help: "The number of event handler requests",
 	})
 	EventHandlerRequestDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "vault_secret_sync_event_handler_request_duration",
+		Name:    "secretsync_event_handler_request_duration",
 		Help:    "The duration of an event handler request",
 		Buckets: prometheus.ExponentialBuckets(1, 2, 10)})
 	EventHandlerErrors = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "vault_secret_sync_event_handler_errors",
+		Name: "secretsync_event_handler_errors",
 		Help: "The number of event handler errors",
 	})
 	EventProcessingDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "vault_secret_sync_event_processing_duration",
+		Name:    "secretsync_event_processing_duration",
 		Help:    "The duration of event processing",
 		Buckets: prometheus.ExponentialBuckets(1, 2, 10)})
 	EventProcessingErrors = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "vault_secret_sync_event_processing_errors",
+		Name: "secretsync_event_processing_errors",
 		Help: "The number of event processing errors",
 	})
 	EventsProcessed = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "vault_secret_sync_events_processed",
+		Name: "secretsync_events_processed",
 		Help: "The number of events processed",
 	})
 	ManualSyncRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "vault_secret_sync_manual_sync_requests",
+		Name: "secretsync_manual_sync_requests",
 		Help: "The number of manual sync requests",
 	}, []string{"namespace", "name"})
 	ManualSyncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "vault_secret_sync_manual_sync_errors",
+		Name: "secretsync_manual_sync_errors",
 		Help: "The number of manual sync errors",
 	}, []string{"namespace", "name"})
 	ManualSyncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "vault_secret_sync_manual_sync_duration",
+		Name:    "secretsync_manual_sync_duration",
 		Help:    "The duration of a manual sync",
 		Buckets: prometheus.ExponentialBuckets(1, 2, 10),
 	}, []string{"namespace", "name"})

@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func shouldFilterStringRegex(sc v1alpha1.VaultSecretSync, str string) bool {
+func shouldFilterStringRegex(sc v1alpha1.SecretSync, str string) bool {
 	l := log.WithFields(log.Fields{
 		"action": "shouldFilterStringRegex",
 	})
@@ -59,7 +59,7 @@ func VaultPathsFromPath(in string) (data string, metadata string) {
 	return dp, mp
 }
 
-func shouldFilterStringPath(sc v1alpha1.VaultSecretSync, str string) bool {
+func shouldFilterStringPath(sc v1alpha1.SecretSync, str string) bool {
 	l := log.WithFields(log.Fields{
 		"action": "shouldFilterStringPath",
 	})
@@ -95,7 +95,7 @@ func shouldFilterStringPath(sc v1alpha1.VaultSecretSync, str string) bool {
 	return false
 }
 
-func ShouldFilterString(sc v1alpha1.VaultSecretSync, str string) bool {
+func ShouldFilterString(sc v1alpha1.SecretSync, str string) bool {
 	if sc.Spec.Filters == nil {
 		return false
 	}

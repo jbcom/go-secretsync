@@ -46,7 +46,7 @@ func SetStoreDefaults(sc *v1alpha1.StoreConfig) {
 	}
 }
 
-func DestinationStoreNames(sc v1alpha1.VaultSecretSync) []driver.DriverName {
+func DestinationStoreNames(sc v1alpha1.SecretSync) []driver.DriverName {
 	var destDrivers []driver.DriverName
 	for _, d := range sc.Spec.Dest {
 		if d.AWS != nil {

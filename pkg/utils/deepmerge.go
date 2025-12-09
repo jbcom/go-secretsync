@@ -1,4 +1,4 @@
-// Package utils provides utility functions for vault-secret-sync.
+// Package utils provides utility functions for secretsync.
 package utils
 
 import (

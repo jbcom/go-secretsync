@@ -113,7 +113,7 @@ func processSyncJobs(ctx context.Context, jobHolder []SyncJob) error {
 
 type SyncJob struct {
 	VaultEvent event.VaultEvent
-	SyncConfig v1alpha1.VaultSecretSync
+	SyncConfig v1alpha1.SecretSync
 	Error      error
 }
 

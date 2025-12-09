@@ -9,14 +9,14 @@ import (
 func TestShouldFilterStringRegex(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		str      string
 		expected bool
 	}{
 		{
 			name: "Exclude regex match",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Regex: &v1alpha1.RegexpFilterConfig{
 							Exclude: []string{"^exclude.*"},
@@ -29,8 +29,8 @@ func TestShouldFilterStringRegex(t *testing.T) {
 		},
 		{
 			name: "Include regex match",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Regex: &v1alpha1.RegexpFilterConfig{
 							Include: []string{"^include.*"},
@@ -43,8 +43,8 @@ func TestShouldFilterStringRegex(t *testing.T) {
 		},
 		{
 			name: "No match in include regexes",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Regex: &v1alpha1.RegexpFilterConfig{
 							Include: []string{"^include.*"},
@@ -57,8 +57,8 @@ func TestShouldFilterStringRegex(t *testing.T) {
 		},
 		{
 			name: "No regex filters",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{},
 				},
 			},
@@ -80,14 +80,14 @@ func TestShouldFilterStringRegex(t *testing.T) {
 func TestShouldFilterStringPath(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		str      string
 		expected bool
 	}{
 		{
 			name: "Exclude path match",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Path: &v1alpha1.PathFilterConfig{
 							Exclude: []string{"path/to/exclude"},
@@ -100,8 +100,8 @@ func TestShouldFilterStringPath(t *testing.T) {
 		},
 		{
 			name: "Include path match",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Path: &v1alpha1.PathFilterConfig{
 							Include: []string{"path/to/include"},
@@ -114,8 +114,8 @@ func TestShouldFilterStringPath(t *testing.T) {
 		},
 		{
 			name: "No match in include paths",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Path: &v1alpha1.PathFilterConfig{
 							Include: []string{"path/to/include"},
@@ -128,8 +128,8 @@ func TestShouldFilterStringPath(t *testing.T) {
 		},
 		{
 			name: "No path filters",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{},
 				},
 			},
@@ -151,14 +151,14 @@ func TestShouldFilterStringPath(t *testing.T) {
 func TestShouldFilterString(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		str      string
 		expected bool
 	}{
 		{
 			name: "Regex filter match",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Regex: &v1alpha1.RegexpFilterConfig{
 							Exclude: []string{"^exclude.*"},
@@ -171,8 +171,8 @@ func TestShouldFilterString(t *testing.T) {
 		},
 		{
 			name: "Path filter match",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Path: &v1alpha1.PathFilterConfig{
 							Exclude: []string{"path/to/exclude"},
@@ -185,8 +185,8 @@ func TestShouldFilterString(t *testing.T) {
 		},
 		{
 			name: "No filters match",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Filters: &v1alpha1.FilterConfig{
 						Regex: &v1alpha1.RegexpFilterConfig{
 							Include: []string{"^include.*"},
@@ -202,8 +202,8 @@ func TestShouldFilterString(t *testing.T) {
 		},
 		{
 			name: "No filters",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{},
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{},
 			},
 			str:      "noFilter",
 			expected: false,

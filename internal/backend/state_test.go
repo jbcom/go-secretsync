@@ -11,8 +11,8 @@ import (
 )
 
 func TestSourceTenantNamespace(t *testing.T) {
-	syncConfig := v1alpha1.VaultSecretSync{
-		Spec: v1alpha1.VaultSecretSyncSpec{
+	syncConfig := v1alpha1.SecretSync{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant1",
 				Namespace: "namespace1",
@@ -28,8 +28,8 @@ func TestSourceTenantNamespace(t *testing.T) {
 }
 
 func TestSourceTenantNamespace_MissingSource(t *testing.T) {
-	syncConfig := v1alpha1.VaultSecretSync{
-		Spec: v1alpha1.VaultSecretSyncSpec{
+	syncConfig := v1alpha1.SecretSync{
+		Spec: v1alpha1.SecretSyncSpec{
 			Dest: []*v1alpha1.StoreConfig{
 				{
 					Vault: &vault.VaultClient{
@@ -49,8 +49,8 @@ func TestSourceTenantNamespace_MissingSource(t *testing.T) {
 }
 
 func TestGetSyncConfigByName(t *testing.T) {
-	syncConfig := v1alpha1.VaultSecretSync{
-		Spec: v1alpha1.VaultSecretSyncSpec{
+	syncConfig := v1alpha1.SecretSync{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant1",
 				Namespace: "namespace1",
@@ -66,7 +66,7 @@ func TestGetSyncConfigByName(t *testing.T) {
 		},
 	}
 
-	SyncConfigs = map[string]v1alpha1.VaultSecretSync{
+	SyncConfigs = map[string]v1alpha1.SecretSync{
 		"config1": syncConfig,
 	}
 
@@ -77,45 +77,45 @@ func TestGetSyncConfigByName(t *testing.T) {
 }
 
 func TestGetSyncConfigByName_NotFound(t *testing.T) {
-	SyncConfigs = map[string]v1alpha1.VaultSecretSync{}
+	SyncConfigs = map[string]v1alpha1.SecretSync{}
 
 	result, err := GetSyncConfigByName("config1")
 
 	assert.Error(t, err)
-	assert.Equal(t, v1alpha1.VaultSecretSync{}, result)
+	assert.Equal(t, v1alpha1.SecretSync{}, result)
 }
 
 func TestTenantNamespaceConfigs(t *testing.T) {
-	syncConfig1 := v1alpha1.VaultSecretSync{
+	syncConfig1 := v1alpha1.SecretSync{
 		ObjectMeta: metav1alpha1.ObjectMeta{
 			Name:      "config1",
 			Namespace: "namespace1",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant1",
 				Namespace: "namespace1",
 			},
 		},
 	}
-	syncConfig2 := v1alpha1.VaultSecretSync{
+	syncConfig2 := v1alpha1.SecretSync{
 		ObjectMeta: metav1alpha1.ObjectMeta{
 			Name:      "config2",
 			Namespace: "namespace2",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant2",
 				Namespace: "namespace2",
 			},
 		},
 	}
-	syncConfig3 := v1alpha1.VaultSecretSync{
+	syncConfig3 := v1alpha1.SecretSync{
 		ObjectMeta: metav1alpha1.ObjectMeta{
 			Name:      "config3",
 			Namespace: "namespace1",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant1",
 				Namespace: "namespace1",
@@ -123,12 +123,12 @@ func TestTenantNamespaceConfigs(t *testing.T) {
 		},
 	}
 
-	syncConfig4 := v1alpha1.VaultSecretSync{
+	syncConfig4 := v1alpha1.SecretSync{
 		ObjectMeta: metav1alpha1.ObjectMeta{
 			Name:      "config4",
 			Namespace: "namespace1",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant1/",
 				Namespace: "namespace1/",
@@ -138,10 +138,10 @@ func TestTenantNamespaceConfigs(t *testing.T) {
 
 	SyncMaps = map[TenantName]TenantSyncs{
 		"tenant1": {
-			"namespace1": []v1alpha1.VaultSecretSync{syncConfig1, syncConfig3, syncConfig4},
+			"namespace1": []v1alpha1.SecretSync{syncConfig1, syncConfig3, syncConfig4},
 		},
 		"tenant2": {
-			"namespace2": []v1alpha1.VaultSecretSync{syncConfig2},
+			"namespace2": []v1alpha1.SecretSync{syncConfig2},
 		},
 	}
 
@@ -159,24 +159,24 @@ func TestTenantNamespaceConfigs(t *testing.T) {
 }
 
 func TestAddSyncConfig_DuplicateAddressNamespacePath(t *testing.T) {
-	syncConfig1 := v1alpha1.VaultSecretSync{
+	syncConfig1 := v1alpha1.SecretSync{
 		ObjectMeta: metav1alpha1.ObjectMeta{
 			Name:      "config1",
 			Namespace: "namespace1",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant1",
 				Namespace: "namespace1",
 			},
 		},
 	}
-	syncConfig2 := v1alpha1.VaultSecretSync{
+	syncConfig2 := v1alpha1.SecretSync{
 		ObjectMeta: metav1alpha1.ObjectMeta{
 			Name:      "config2",
 			Namespace: "namespace1",
 		},
-		Spec: v1alpha1.VaultSecretSyncSpec{
+		Spec: v1alpha1.SecretSyncSpec{
 			Source: &vault.VaultClient{
 				Address:   "tenant1",
 				Namespace: "namespace1",
@@ -184,7 +184,7 @@ func TestAddSyncConfig_DuplicateAddressNamespacePath(t *testing.T) {
 		},
 	}
 
-	SyncConfigs = map[string]v1alpha1.VaultSecretSync{}
+	SyncConfigs = map[string]v1alpha1.SecretSync{}
 	SyncMaps = make(map[TenantName]TenantSyncs)
 
 	err1 := AddSyncConfig(syncConfig1)

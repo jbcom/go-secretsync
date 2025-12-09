@@ -31,12 +31,12 @@ func TestHandleNotificationTemplate(t *testing.T) {
 	})
 
 	message := v1alpha1.NotificationMessage{
-		VaultSecretSync: v1alpha1.VaultSecretSync{
+		SecretSync: v1alpha1.SecretSync{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-sync",
 				Namespace: "test-namespace",
 			},
-			Spec: v1alpha1.VaultSecretSyncSpec{
+			Spec: v1alpha1.SecretSyncSpec{
 				NotificationsTemplate: func(s string) *string { return &s }("test-configmap/test-key.yaml"),
 			},
 		},
@@ -44,14 +44,14 @@ func TestHandleNotificationTemplate(t *testing.T) {
 
 	err := handleNotificationTemplate(context.Background(), client, &message)
 	assert.NoError(t, err)
-	assert.NotNil(t, message.VaultSecretSync.Spec.Notifications)
-	assert.Len(t, message.VaultSecretSync.Spec.Notifications, 1)
-	assert.NotNil(t, message.VaultSecretSync.Spec.Notifications[0].Slack)
-	assert.Equal(t, "https://hooks.slack.com/services/YOUR_WORKSPACE/YOUR_CHANNEL/YOUR_TOKEN", *message.VaultSecretSync.Spec.Notifications[0].Slack.URL)
+	assert.NotNil(t, message.SecretSync.Spec.Notifications)
+	assert.Len(t, message.SecretSync.Spec.Notifications, 1)
+	assert.NotNil(t, message.SecretSync.Spec.Notifications[0].Slack)
+	assert.Equal(t, "https://hooks.slack.com/services/YOUR_WORKSPACE/YOUR_CHANNEL/YOUR_TOKEN", *message.SecretSync.Spec.Notifications[0].Slack.URL)
 
 	expectedEvents := []string{"success", "failure"}
-	actualEvents := make([]string, len(message.VaultSecretSync.Spec.Notifications[0].Slack.Events))
-	for i, event := range message.VaultSecretSync.Spec.Notifications[0].Slack.Events {
+	actualEvents := make([]string, len(message.SecretSync.Spec.Notifications[0].Slack.Events))
+	for i, event := range message.SecretSync.Spec.Notifications[0].Slack.Events {
 		actualEvents[i] = string(event)
 	}
 	assert.ElementsMatch(t, expectedEvents, actualEvents)

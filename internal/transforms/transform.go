@@ -11,7 +11,7 @@ import (
 	"github.com/jbcom/secretsync/api/v1alpha1"
 )
 
-func ExecuteTransformTemplate(sc v1alpha1.VaultSecretSync, secret []byte) ([]byte, error) {
+func ExecuteTransformTemplate(sc v1alpha1.SecretSync, secret []byte) ([]byte, error) {
 	if sc.Spec.Transforms == nil || sc.Spec.Transforms.Template == nil || *sc.Spec.Transforms.Template == "" {
 		return secret, nil
 	}
@@ -49,7 +49,7 @@ func ExecuteTransformTemplate(sc v1alpha1.VaultSecretSync, secret []byte) ([]byt
 	return buf.Bytes(), nil
 }
 
-func ExecuteRenameTransforms(sc v1alpha1.VaultSecretSync, secret []byte) ([]byte, error) {
+func ExecuteRenameTransforms(sc v1alpha1.SecretSync, secret []byte) ([]byte, error) {
 	if sc.Spec.Transforms == nil || sc.Spec.Transforms.Rename == nil {
 		return secret, nil
 	}
@@ -83,7 +83,7 @@ func isRegex(path string) bool {
 	return err == nil
 }
 
-func ExecuteIncludeTransforms(sc v1alpha1.VaultSecretSync, secret []byte) ([]byte, error) {
+func ExecuteIncludeTransforms(sc v1alpha1.SecretSync, secret []byte) ([]byte, error) {
 	if sc.Spec.Transforms == nil || sc.Spec.Transforms.Include == nil {
 		return secret, nil
 	}
@@ -119,7 +119,7 @@ func ExecuteIncludeTransforms(sc v1alpha1.VaultSecretSync, secret []byte) ([]byt
 	return jd, nil
 }
 
-func ExecuteExcludeTransforms(sc v1alpha1.VaultSecretSync, secret []byte) ([]byte, error) {
+func ExecuteExcludeTransforms(sc v1alpha1.SecretSync, secret []byte) ([]byte, error) {
 	if sc.Spec.Transforms == nil || sc.Spec.Transforms.Exclude == nil {
 		return secret, nil
 	}
@@ -158,7 +158,7 @@ func ExecuteExcludeTransforms(sc v1alpha1.VaultSecretSync, secret []byte) ([]byt
 	return jd, nil
 }
 
-func ExecuteTransforms(sc v1alpha1.VaultSecretSync, secret []byte) ([]byte, error) {
+func ExecuteTransforms(sc v1alpha1.SecretSync, secret []byte) ([]byte, error) {
 	if sc.Spec.Transforms == nil {
 		return secret, nil
 	}

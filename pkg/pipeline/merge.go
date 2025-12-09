@@ -153,10 +153,10 @@ func (p *Pipeline) mergeTarget(ctx context.Context, targetName string, dryRun bo
 	return result
 }
 
-// createMergeSync creates a VaultSecretSync for merging sources
-func (p *Pipeline) createMergeSync(importName, targetName, sourcePath, mergePath string, dryRun bool) v1alpha1.VaultSecretSync {
-	sync := v1alpha1.VaultSecretSync{
-		Spec: v1alpha1.VaultSecretSyncSpec{
+// createMergeSync creates a SecretSync for merging sources
+func (p *Pipeline) createMergeSync(importName, targetName, sourcePath, mergePath string, dryRun bool) v1alpha1.SecretSync {
+	sync := v1alpha1.SecretSync{
+		Spec: v1alpha1.SecretSyncSpec{
 			DryRun:     boolPtr(dryRun),
 			SyncDelete: boolPtr(false),
 			Source: &vault.VaultClient{

@@ -17,7 +17,7 @@ import (
 func sendSlackNotification(ctx context.Context, message v1alpha1.NotificationMessage, slack v1alpha1.SlackNotification) error {
 	l := log.WithFields(log.Fields{"action": "sendSlackNotification"})
 	if (slack.URL == nil || *slack.URL == "") && slack.URLSecret != nil && *slack.URLSecret != "" {
-		sc, err := kubesecret.GetSecret(ctx, message.VaultSecretSync.Namespace, *slack.URLSecret)
+		sc, err := kubesecret.GetSecret(ctx, message.SecretSync.Namespace, *slack.URLSecret)
 		if err != nil {
 			l.WithError(err).Error("failed to get secret for Slack URL")
 			return err
@@ -43,8 +43,8 @@ func sendSlackNotification(ctx context.Context, message v1alpha1.NotificationMes
 	if err != nil {
 		if writeErr := backend.WriteEvent(
 			ctx,
-			message.VaultSecretSync.Namespace,
-			message.VaultSecretSync.Name,
+			message.SecretSync.Namespace,
+			message.SecretSync.Name,
 			"Warning",
 			string(backend.SyncStatusFailed),
 			fmt.Sprintf("failed to marshal Slack notification payload: %v", err),
@@ -61,8 +61,8 @@ func sendSlackNotification(ctx context.Context, message v1alpha1.NotificationMes
 	if err != nil {
 		if writeErr := backend.WriteEvent(
 			ctx,
-			message.VaultSecretSync.Namespace,
-			message.VaultSecretSync.Name,
+			message.SecretSync.Namespace,
+			message.SecretSync.Name,
 			"Warning",
 			string(backend.SyncStatusFailed),
 			fmt.Sprintf("failed to send Slack notification: %v", err),
@@ -77,8 +77,8 @@ func sendSlackNotification(ctx context.Context, message v1alpha1.NotificationMes
 	if resp.StatusCode != http.StatusOK {
 		if writeErr := backend.WriteEvent(
 			ctx,
-			message.VaultSecretSync.Namespace,
-			message.VaultSecretSync.Name,
+			message.SecretSync.Namespace,
+			message.SecretSync.Name,
 			"Warning",
 			string(backend.SyncStatusFailed),
 			fmt.Sprintf("failed to send Slack notification, status code: %d", resp.StatusCode),
@@ -91,8 +91,8 @@ func sendSlackNotification(ctx context.Context, message v1alpha1.NotificationMes
 	}
 	if writeErr := backend.WriteEvent(
 		ctx,
-		message.VaultSecretSync.Namespace,
-		message.VaultSecretSync.Name,
+		message.SecretSync.Namespace,
+		message.SecretSync.Name,
 		"Normal",
 		"SlackNotificationSent",
 		"Slack notification sent successfully",
@@ -123,14 +123,14 @@ func handleSlack(ctx context.Context, message v1alpha1.NotificationMessage) erro
 		"pkg":              "notifications",
 		"action":           "notifications.handleSlack",
 		"notificationType": "slack",
-		"syncConfig":       message.VaultSecretSync.Name,
-		"syncNamespace":    message.VaultSecretSync.Namespace,
+		"syncConfig":       message.SecretSync.Name,
+		"syncNamespace":    message.SecretSync.Namespace,
 	})
 	l.Trace("start")
 	defer l.Trace("end")
 	jobsToDo := []slackJob{}
 NotifLoop:
-	for _, slack := range message.VaultSecretSync.Spec.Notifications {
+	for _, slack := range message.SecretSync.Spec.Notifications {
 		if slack.Slack == nil {
 			l.Debugf("skipping Slack notification: %v", slack)
 			continue NotifLoop

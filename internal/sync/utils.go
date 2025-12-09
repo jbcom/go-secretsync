@@ -245,7 +245,7 @@ func LoopWildcardRecursive(ctx context.Context, source SyncClient, sourcePath st
 	return fullList, nil
 }
 
-func NeedsSync(sc v1alpha1.VaultSecretSync, evt event.VaultEvent) bool {
+func NeedsSync(sc v1alpha1.SecretSync, evt event.VaultEvent) bool {
 	l := log.WithFields(log.Fields{
 		"action":     "NeedsSync",
 		"eventPath":  evt.Path,
@@ -309,7 +309,7 @@ func NeedsSync(sc v1alpha1.VaultSecretSync, evt event.VaultEvent) bool {
 	return false
 }
 
-func ManualTrigger(ctx context.Context, cfg v1alpha1.VaultSecretSync, op logical.Operation) error {
+func ManualTrigger(ctx context.Context, cfg v1alpha1.SecretSync, op logical.Operation) error {
 	l := log.WithFields(log.Fields{"action": "ManualTrigger"})
 	l.Trace("start")
 	defer l.Trace("end")

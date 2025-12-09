@@ -7,10 +7,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GenerateConfigs generates VaultSecretSync configs without executing them
+// GenerateConfigs generates SecretSync configs without executing them
 // Useful for GitOps workflows or Kubernetes CRD generation
-func (p *Pipeline) GenerateConfigs(opts Options) ([]v1alpha1.VaultSecretSync, error) {
-	var configs []v1alpha1.VaultSecretSync
+func (p *Pipeline) GenerateConfigs(opts Options) ([]v1alpha1.SecretSync, error) {
+	var configs []v1alpha1.SecretSync
 
 	if p.config.MergeStore.Vault == nil {
 		log.Warn("GenerateConfigs only supports Vault merge store; S3 merge store operations are handled inline")

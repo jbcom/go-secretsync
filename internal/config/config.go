@@ -158,7 +158,7 @@ func (c *ConfigFile) SetFromEnv() error {
 	})
 	l.Trace("start")
 	defer l.Trace("end")
-	err := envconfig.Process("vss", c)
+	err := envconfig.Process("secretsync", c)
 	if err != nil {
 		l.Error(err)
 		return err

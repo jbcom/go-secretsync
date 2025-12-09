@@ -22,16 +22,16 @@ func TestMessagePayload(t *testing.T) {
 			message: v1alpha1.NotificationMessage{
 				Event:   v1alpha1.NotificationEventSyncSuccess,
 				Message: "Sync completed successfully",
-				VaultSecretSync: v1alpha1.VaultSecretSync{
+				SecretSync: v1alpha1.SecretSync{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "VaultSecretSync",
-						APIVersion: "vaultsecretsync.lestak.sh/v1alpha1",
+						Kind:       "SecretSync",
+						APIVersion: "secretsync.jbcom.dev/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "example-vaultsecretsync",
+						Name:      "example-secretsync",
 						Namespace: "default",
 					},
-					Spec: v1alpha1.VaultSecretSyncSpec{
+					Spec: v1alpha1.SecretSyncSpec{
 						Source: &vault.VaultClient{
 							Address: "http://vault.example.com",
 							Path:    "secret/data",
@@ -55,16 +55,16 @@ func TestMessagePayload(t *testing.T) {
 			message: v1alpha1.NotificationMessage{
 				Event:   v1alpha1.NotificationEventSyncSuccess,
 				Message: "Sync completed successfully",
-				VaultSecretSync: v1alpha1.VaultSecretSync{
+				SecretSync: v1alpha1.SecretSync{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "VaultSecretSync",
-						APIVersion: "vaultsecretsync.lestak.sh/v1alpha1",
+						Kind:       "SecretSync",
+						APIVersion: "secretsync.jbcom.dev/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "example-vaultsecretsync",
+						Name:      "example-secretsync",
 						Namespace: "default",
 					},
-					Spec: v1alpha1.VaultSecretSyncSpec{
+					Spec: v1alpha1.SecretSyncSpec{
 						Source: &vault.VaultClient{
 							Address: "http://vault.example.com",
 							Path:    "secret/data",
@@ -88,16 +88,16 @@ func TestMessagePayload(t *testing.T) {
 			message: v1alpha1.NotificationMessage{
 				Event:   v1alpha1.NotificationEventSyncSuccess,
 				Message: "Sync completed successfully",
-				VaultSecretSync: v1alpha1.VaultSecretSync{
+				SecretSync: v1alpha1.SecretSync{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "VaultSecretSync",
-						APIVersion: "vaultsecretsync.lestak.sh/v1alpha1",
+						Kind:       "SecretSync",
+						APIVersion: "secretsync.jbcom.dev/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "example-vaultsecretsync",
+						Name:      "example-secretsync",
 						Namespace: "default",
 					},
-					Spec: v1alpha1.VaultSecretSyncSpec{
+					Spec: v1alpha1.SecretSyncSpec{
 						Source: &vault.VaultClient{
 							Address: "http://vault.example.com",
 							Path:    "secret/data",
@@ -111,12 +111,12 @@ func TestMessagePayload(t *testing.T) {
 							},
 						},
 					},
-					Status: v1alpha1.VaultSecretSyncStatus{
+					Status: v1alpha1.SecretSyncStatus{
 						Status: "success",
 					},
 				},
 			},
-			body: "status: {{.Event}}, message: {{.Message}}, sync status: {{.VaultSecretSync.Status.Status}}",
+			body: "status: {{.Event}}, message: {{.Message}}, sync status: {{.SecretSync.Status.Status}}",
 			want: "status: success, message: Sync completed successfully, sync status: success",
 		},
 	}

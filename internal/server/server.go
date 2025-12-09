@@ -139,7 +139,7 @@ func eventAuthValid(r *http.Request) bool {
 		l.Warn("security enabled but no token or client cert provided")
 		return false
 	}
-	token := r.Header.Get("X-Vault-Secret-Sync-Token")
+	token := r.Header.Get("X-SecretSync-Token")
 	tlsEnabled := config.Config.Events.Security.TLS != nil
 	clientAuthEnabled := tlsEnabled && config.Config.Events.Security.TLS.ClientAuth != nil
 	if clientAuthEnabled && (*config.Config.Events.Security.TLS.ClientAuth == "require" || *config.Config.Events.Security.TLS.ClientAuth == "verify") {

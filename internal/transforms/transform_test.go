@@ -10,15 +10,15 @@ import (
 func TestExecuteTransformTemplate(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		secret   []byte
 		expected []byte
 		wantErr  bool
 	}{
 		{
 			name: "No template",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{},
 				},
 			},
@@ -28,8 +28,8 @@ func TestExecuteTransformTemplate(t *testing.T) {
 		},
 		{
 			name: "Valid template",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{
 						Template: ptrToString(`{"newKey":"{{ .key }}"}`),
 					},
@@ -56,15 +56,15 @@ func TestExecuteTransformTemplate(t *testing.T) {
 func TestExecuteRenameTransforms(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		secret   []byte
 		expected []byte
 		wantErr  bool
 	}{
 		{
 			name: "No rename",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{},
 				},
 			},
@@ -74,8 +74,8 @@ func TestExecuteRenameTransforms(t *testing.T) {
 		},
 		{
 			name: "Valid rename",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{
 						Rename: []v1alpha1.RenameTransform{
 							{From: "key", To: "newKey"},
@@ -104,15 +104,15 @@ func TestExecuteRenameTransforms(t *testing.T) {
 func TestExecuteIncludeTransforms(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		secret   []byte
 		expected []byte
 		wantErr  bool
 	}{
 		{
 			name: "No include",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{},
 				},
 			},
@@ -122,8 +122,8 @@ func TestExecuteIncludeTransforms(t *testing.T) {
 		},
 		{
 			name: "Valid include",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{
 						Include: []string{"key"},
 					},
@@ -150,15 +150,15 @@ func TestExecuteIncludeTransforms(t *testing.T) {
 func TestExecuteExcludeTransforms(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		secret   []byte
 		expected []byte
 		wantErr  bool
 	}{
 		{
 			name: "No exclude",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{},
 				},
 			},
@@ -168,8 +168,8 @@ func TestExecuteExcludeTransforms(t *testing.T) {
 		},
 		{
 			name: "Valid exclude",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{
 						Exclude: []string{"key"},
 					},
@@ -196,15 +196,15 @@ func TestExecuteExcludeTransforms(t *testing.T) {
 func TestExecuteTransforms(t *testing.T) {
 	tests := []struct {
 		name     string
-		sc       v1alpha1.VaultSecretSync
+		sc       v1alpha1.SecretSync
 		secret   []byte
 		expected []byte
 		wantErr  bool
 	}{
 		{
 			name: "No transforms",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{},
 				},
 			},
@@ -214,8 +214,8 @@ func TestExecuteTransforms(t *testing.T) {
 		},
 		{
 			name: "All transforms",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{
 						Exclude: []string{"excludeKey"},
 						Include: []string{"includeKey"},
@@ -232,8 +232,8 @@ func TestExecuteTransforms(t *testing.T) {
 		},
 		{
 			name: "Regex include",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{
 						Include: []string{"NEXT_PUBLIC_.*"},
 					},
@@ -245,8 +245,8 @@ func TestExecuteTransforms(t *testing.T) {
 		},
 		{
 			name: "Regex exclude",
-			sc: v1alpha1.VaultSecretSync{
-				Spec: v1alpha1.VaultSecretSyncSpec{
+			sc: v1alpha1.SecretSync{
+				Spec: v1alpha1.SecretSyncSpec{
 					Transforms: &v1alpha1.TransformSpec{
 						Exclude: []string{"NEXT_PRIVATE_.*"},
 					},

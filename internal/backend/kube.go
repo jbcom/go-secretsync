@@ -38,7 +38,7 @@ const (
 var (
 	Scheme     = runtime.NewScheme()
 	setupLog   = ctrl.Log.WithName("setup")
-	Reconciler *VaultSecretSyncReconciler
+	Reconciler *SecretSyncReconciler
 )
 
 type KubernetesBackend struct {
@@ -53,7 +53,7 @@ func init() {
 	utilruntime.Must(vaultv1alpha1.AddToScheme(Scheme))
 }
 
-type VaultSecretSyncReconciler struct {
+type SecretSyncReconciler struct {
 	client.Client
 	APIReader client.Reader
 	Scheme    *runtime.Scheme
@@ -64,7 +64,7 @@ func (b *KubernetesBackend) Type() BackendType {
 	return BackendTypeKubernetes
 }
 
-func SetSyncStatus(ctx context.Context, sc vaultv1alpha1.VaultSecretSync, status SyncStatusString) error {
+func SetSyncStatus(ctx context.Context, sc vaultv1alpha1.SecretSync, status SyncStatusString) error {
 	if B == nil {
 		return nil
 	}
@@ -80,7 +80,7 @@ func WriteEvent(ctx context.Context, namespace string, name string, Event string
 	if Reconciler == nil {
 		return nil
 	}
-	s := &vaultv1alpha1.VaultSecretSync{}
+	s := &vaultv1alpha1.SecretSync{}
 	err := Reconciler.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, s)
 	if err != nil {
 		return err
@@ -89,8 +89,8 @@ func WriteEvent(ctx context.Context, namespace string, name string, Event string
 	return nil
 }
 
-// AnnotationOperations handles annotations on VaultSecretSync objects
-func AnnotationOperations(ctx context.Context, r *VaultSecretSyncReconciler, vaultSecretSync *vaultv1alpha1.VaultSecretSync) error {
+// AnnotationOperations handles annotations on SecretSync objects
+func AnnotationOperations(ctx context.Context, r *SecretSyncReconciler, vaultSecretSync *vaultv1alpha1.SecretSync) error {
 	l := log.WithFields(log.Fields{
 		"action": "annotationOperations",
 	})
@@ -120,7 +120,7 @@ func AnnotationOperations(ctx context.Context, r *VaultSecretSyncReconciler, vau
 		delete(vaultSecretSync.Annotations, "force-sync")
 		delete(vaultSecretSync.Annotations, "op")
 
-		// Update the VaultSecretSync object
+		// Update the SecretSync object
 		if err := r.Update(ctx, vaultSecretSync, client.FieldOwner("vault-secret-sync-controller")); err != nil {
 			l.Errorf("failed to update object: %v", err)
 			return err
@@ -131,7 +131,7 @@ func AnnotationOperations(ctx context.Context, r *VaultSecretSyncReconciler, vau
 	return nil
 }
 
-func createHash(s vaultv1alpha1.VaultSecretSync) (string, error) {
+func createHash(s vaultv1alpha1.SecretSync) (string, error) {
 	l := log.WithFields(log.Fields{
 		"action": "createHash",
 	})
@@ -150,7 +150,7 @@ func createHash(s vaultv1alpha1.VaultSecretSync) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func setSyncStatusKube(ctx context.Context, sc vaultv1alpha1.VaultSecretSync, status SyncStatusString) error {
+func setSyncStatusKube(ctx context.Context, sc vaultv1alpha1.SecretSync, status SyncStatusString) error {
 	l := log.WithFields(log.Fields{
 		"action":    "setSyncStatusKube",
 		"status":    status,
@@ -160,7 +160,7 @@ func setSyncStatusKube(ctx context.Context, sc vaultv1alpha1.VaultSecretSync, st
 	l.Trace("start")
 	defer l.Trace("end")
 	l.Debug("setting sync status")
-	s := &vaultv1alpha1.VaultSecretSync{}
+	s := &vaultv1alpha1.SecretSync{}
 	err := Reconciler.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: sc.Name}, s)
 	if err != nil {
 		l.Errorf("failed to get object: %v", err)
@@ -185,22 +185,22 @@ func setSyncStatusKube(ctx context.Context, sc vaultv1alpha1.VaultSecretSync, st
 	return nil
 }
 
-func (r *VaultSecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.WithFields(log.Fields{
 		"action": "Reconcile",
 	})
 	l.Trace("start")
 	defer l.Trace("end")
-	_ = ctrl.Log.WithName("controllers").WithName("VaultSecretSync")
+	_ = ctrl.Log.WithName("controllers").WithName("SecretSync")
 
 	l = l.WithFields(log.Fields{
 		"namespace": req.Namespace,
 		"name":      req.Name,
 	})
-	l.Debug("reconciling VaultSecretSync")
+	l.Debug("reconciling SecretSync")
 
-	// Fetch the VaultSecretSync instance
-	vaultSecretSync := &vaultv1alpha1.VaultSecretSync{}
+	// Fetch the SecretSync instance
+	vaultSecretSync := &vaultv1alpha1.SecretSync{}
 	err := r.Get(ctx, req.NamespacedName, vaultSecretSync)
 	if err != nil {
 		if client.IgnoreNotFound(err) != nil {
@@ -219,7 +219,7 @@ func (r *VaultSecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		"namespace": vaultSecretSync.Namespace,
 		"name":      vaultSecretSync.Name,
 	})
-	l.Trace("retrieved VaultSecretSync")
+	l.Trace("retrieved SecretSync")
 
 	// Check if the object is being deleted
 	if !vaultSecretSync.DeletionTimestamp.IsZero() {
@@ -237,7 +237,7 @@ func (r *VaultSecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// sanity check debug log the input object
-	l.Debugf("VaultSecretSync.Spec.Source: %+v VaultSecretSync.Spec.Dest: %+v", vaultSecretSync.Spec.Source, vaultSecretSync.Spec.Dest)
+	l.Debugf("SecretSync.Spec.Source: %+v SecretSync.Spec.Dest: %+v", vaultSecretSync.Spec.Source, vaultSecretSync.Spec.Dest)
 	var syncNow bool
 	// Check if the object has been initialized
 	if vaultSecretSync.Status.Status == "" {
@@ -287,9 +287,9 @@ func (r *VaultSecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func (r *VaultSecretSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SecretSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&vaultv1alpha1.VaultSecretSync{}).
+		For(&vaultv1alpha1.SecretSync{}).
 		Complete(r)
 }
 
@@ -350,14 +350,14 @@ func (b *KubernetesBackend) setupOperator(ctx context.Context) error {
 		setupLog.Error(err, "unable to start manager")
 		return err
 	}
-	reconciler := &VaultSecretSyncReconciler{
+	reconciler := &SecretSyncReconciler{
 		Client:    mgr.GetClient(),
 		APIReader: mgr.GetAPIReader(),
 		Scheme:    mgr.GetScheme(),
 		Recorder:  mgr.GetEventRecorderFor("vault-secret-sync-controller"),
 	}
 	if err = reconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "VaultSecretSync")
+		setupLog.Error(err, "unable to create controller", "controller", "SecretSync")
 		return err
 	}
 	Reconciler = reconciler

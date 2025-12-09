@@ -66,8 +66,8 @@ func sendEmailNotification(ctx context.Context, message v1alpha1.NotificationMes
 	if err != nil {
 		if writeErr := backend.WriteEvent(
 			ctx,
-			message.VaultSecretSync.Namespace,
-			message.VaultSecretSync.Name,
+			message.SecretSync.Namespace,
+			message.SecretSync.Name,
 			"Warning",
 			string(backend.SyncStatusFailed),
 			fmt.Sprintf("failed to create email notification: %v", err),
@@ -106,8 +106,8 @@ func sendEmailNotification(ctx context.Context, message v1alpha1.NotificationMes
 	if err := d.DialAndSend(m); err != nil {
 		if writeErr := backend.WriteEvent(
 			ctx,
-			message.VaultSecretSync.Namespace,
-			message.VaultSecretSync.Name,
+			message.SecretSync.Namespace,
+			message.SecretSync.Name,
 			"Warning",
 			string(backend.SyncStatusFailed),
 			fmt.Sprintf("failed to send email notification: %v", err),
@@ -118,8 +118,8 @@ func sendEmailNotification(ctx context.Context, message v1alpha1.NotificationMes
 	}
 	if writeErr := backend.WriteEvent(
 		ctx,
-		message.VaultSecretSync.Namespace,
-		message.VaultSecretSync.Name,
+		message.SecretSync.Namespace,
+		message.SecretSync.Name,
 		"Normal",
 		"EmailSent",
 		"Email notification sent successfully",
@@ -149,14 +149,14 @@ func handleEmail(ctx context.Context, message v1alpha1.NotificationMessage) erro
 		"pkg":              "notifications",
 		"action":           "notifications.handleEmail",
 		"notificationType": "email",
-		"syncConfig":       message.VaultSecretSync.Name,
-		"syncNamespace":    message.VaultSecretSync.Namespace,
+		"syncConfig":       message.SecretSync.Name,
+		"syncNamespace":    message.SecretSync.Namespace,
 	})
 	l.Trace("start")
 	defer l.Trace("end")
 	jobsToDo := []emailJob{}
 NotifLoop:
-	for _, email := range message.VaultSecretSync.Spec.Notifications {
+	for _, email := range message.SecretSync.Spec.Notifications {
 		if email.Email == nil {
 			l.Debugf("skipping email notification: %v", email)
 			continue NotifLoop

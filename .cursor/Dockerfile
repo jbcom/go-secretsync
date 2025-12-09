@@ -1,4 +1,4 @@
-# Go development environment for vault-secret-sync
+# Go development environment for SecretSync
 FROM golang:1.25.5-trixie
 
 WORKDIR /workspace
@@ -14,6 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gh \
     # Task automation
     just \
+    # Essential CLI tools
+    ripgrep \
+    jq \
+    curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================
@@ -30,4 +35,4 @@ RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/i
 RUN git lfs install --system --skip-smudge
 
 # Verify installations
-RUN go version && golangci-lint --version && gh --version
+RUN go version && golangci-lint --version && gh --version && rg --version && jq --version

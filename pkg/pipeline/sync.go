@@ -125,10 +125,10 @@ func (p *Pipeline) syncTarget(ctx context.Context, targetName string, dryRun boo
 	return result
 }
 
-// createAWSSync creates a VaultSecretSync for syncing to AWS
-func (p *Pipeline) createAWSSync(targetName, sourcePath, roleARN, region string, dryRun bool) v1alpha1.VaultSecretSync {
-	sync := v1alpha1.VaultSecretSync{
-		Spec: v1alpha1.VaultSecretSyncSpec{
+// createAWSSync creates a SecretSync for syncing to AWS
+func (p *Pipeline) createAWSSync(targetName, sourcePath, roleARN, region string, dryRun bool) v1alpha1.SecretSync {
+	sync := v1alpha1.SecretSync{
+		Spec: v1alpha1.SecretSyncSpec{
 			DryRun:     boolPtr(dryRun),
 			SyncDelete: boolPtr(p.config.Pipeline.Sync.DeleteOrphans),
 			Source: &vault.VaultClient{

@@ -18,17 +18,17 @@ func handleNotificationTemplate(ctx context.Context, kc kubernetes.Interface, me
 	l := log.WithFields(log.Fields{
 		"pkg":           "notifications",
 		"action":        "handleNotificationTemplate",
-		"syncConfig":    message.VaultSecretSync.Name,
-		"syncNamespace": message.VaultSecretSync.Namespace,
+		"syncConfig":    message.SecretSync.Name,
+		"syncNamespace": message.SecretSync.Namespace,
 	})
 	l.Trace("start")
 	defer l.Trace("end")
 
-	if message.VaultSecretSync.Spec.NotificationsTemplate == nil {
+	if message.SecretSync.Spec.NotificationsTemplate == nil {
 		return fmt.Errorf("notifications template is not configured")
 	}
 
-	template := *message.VaultSecretSync.Spec.NotificationsTemplate
+	template := *message.SecretSync.Spec.NotificationsTemplate
 	parts := strings.Split(template, "/")
 	if len(parts) < 2 || len(parts) > 3 {
 		return fmt.Errorf("invalid template format: %s", template)
@@ -36,7 +36,7 @@ func handleNotificationTemplate(ctx context.Context, kc kubernetes.Interface, me
 
 	var namespace, configMapName, key string
 	if len(parts) == 2 {
-		namespace = message.VaultSecretSync.Namespace
+		namespace = message.SecretSync.Namespace
 		configMapName = parts[0]
 		key = parts[1]
 	} else {
@@ -60,7 +60,7 @@ func handleNotificationTemplate(ctx context.Context, kc kubernetes.Interface, me
 		return fmt.Errorf("failed to unmarshal notification template: %w", err)
 	}
 
-	message.VaultSecretSync.Spec.Notifications = notifConfig
+	message.SecretSync.Spec.Notifications = notifConfig
 	return nil
 }
 
@@ -69,13 +69,13 @@ func Trigger(ctx context.Context, message v1alpha1.NotificationMessage) error {
 	l := log.WithFields(log.Fields{
 		"pkg":           "notifications",
 		"action":        "notifications.Trigger",
-		"syncConfig":    message.VaultSecretSync.Name,
-		"syncNamespace": message.VaultSecretSync.Namespace,
-		"notifications": len(message.VaultSecretSync.Spec.Notifications),
+		"syncConfig":    message.SecretSync.Name,
+		"syncNamespace": message.SecretSync.Namespace,
+		"notifications": len(message.SecretSync.Spec.Notifications),
 	})
 	l.Trace("start")
 	defer l.Trace("end")
-	if message.VaultSecretSync.Spec.NotificationsTemplate != nil {
+	if message.SecretSync.Spec.NotificationsTemplate != nil {
 		l.Debug("notifications template configured")
 		kc, err := kube.CreateKubeClient()
 		if err != nil {
@@ -88,7 +88,7 @@ func Trigger(ctx context.Context, message v1alpha1.NotificationMessage) error {
 			return fmt.Errorf("failed to handle notifications template: %w", err)
 		}
 	}
-	if len(message.VaultSecretSync.Spec.Notifications) == 0 {
+	if len(message.SecretSync.Spec.Notifications) == 0 {
 		l.Debug("no notifications configured")
 		return nil
 	}
@@ -131,7 +131,7 @@ func Trigger(ctx context.Context, message v1alpha1.NotificationMessage) error {
 		l.WithFields(log.Fields{
 			"errorCount": len(errs),
 			"errors":     errs,
-		}).Errorf("failed to handle %d/%d notifications", len(errs), len(message.VaultSecretSync.Spec.Notifications))
+		}).Errorf("failed to handle %d/%d notifications", len(errs), len(message.SecretSync.Spec.Notifications))
 		return fmt.Errorf("failed to handle notifications: %v", errs)
 	} else {
 		l.Info("all notifications handled successfully")
