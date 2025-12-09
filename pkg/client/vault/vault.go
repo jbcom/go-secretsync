@@ -271,6 +271,9 @@ func (vc *VaultClient) GetKVSecretOnce(ctx context.Context, s string) (map[strin
 		return secrets, errors.New("vault client not initialized")
 	}
 	
+	// Ensure circuit breaker is initialized
+	vc.ensureBreaker()
+	
 	// Wrap Vault API call with circuit breaker
 	result, err := circuitbreaker.ExecuteTyped(vc.breaker, ctx, func(ctx context.Context) (*api.Secret, error) {
 		return c.ReadWithContext(ctx, s)
@@ -421,6 +424,9 @@ func (vc *VaultClient) WriteSecretOnce(ctx context.Context, p string, s map[stri
 		}
 	}
 
+	// Ensure circuit breaker is initialized
+	vc.ensureBreaker()
+	
 	// Wrap Vault API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(vc.breaker, ctx, func(ctx context.Context) (*api.Secret, error) {
 		return vc.Client.Logical().WriteWithContext(ctx, p, vd)
@@ -447,6 +453,9 @@ func (vc *VaultClient) WriteSecretWithLatestCAS(ctx context.Context, p string, s
 	metadataPath = insertSliceString(metadataPath, 1, "metadata")
 	metadataPathStr := strings.Join(metadataPath, "/")
 
+	// Ensure circuit breaker is initialized
+	vc.ensureBreaker()
+	
 	metadata, err := circuitbreaker.ExecuteTyped(vc.breaker, ctx, func(ctx context.Context) (*api.Secret, error) {
 		return vc.Client.Logical().ReadWithContext(ctx, metadataPathStr)
 	})
@@ -506,6 +515,9 @@ func (vc *VaultClient) DeleteSecret(ctx context.Context, p string) error {
 	if terr != nil {
 		return terr
 	}
+	
+	// Ensure circuit breaker is initialized
+	vc.ensureBreaker()
 	
 	// Wrap Vault API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(vc.breaker, ctx, func(ctx context.Context) (*api.Secret, error) {
@@ -727,12 +739,27 @@ func (vc *VaultClient) getLogicalClient() LogicalClient {
 	return vc.Client.Logical()
 }
 
+// ensureBreaker initializes circuit breaker if not already initialized
+// This handles cases where VaultClient is created without NewClient (e.g., in tests)
+func (vc *VaultClient) ensureBreaker() {
+	if vc.breaker == nil {
+		breakerName := fmt.Sprintf("vault-%s", vc.Address)
+		if breakerName == "vault-" {
+			breakerName = "vault-default"
+		}
+		vc.breaker = circuitbreaker.New(circuitbreaker.DefaultConfig(breakerName))
+	}
+}
+
 // listPathContents performs the actual Vault LIST operation with circuit breaker
 func (vc *VaultClient) listPathContents(ctx context.Context, metadataPath string) ([]string, error) {
 	logical := vc.getLogicalClient()
 	if logical == nil {
 		return nil, errors.New("vault client not initialized")
 	}
+	
+	// Ensure circuit breaker is initialized
+	vc.ensureBreaker()
 	
 	// Wrap Vault API call with circuit breaker
 	result, err := circuitbreaker.ExecuteTyped(vc.breaker, ctx, func(ctx context.Context) (*api.Secret, error) {

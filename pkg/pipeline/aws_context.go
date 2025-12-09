@@ -425,9 +425,11 @@ func (ec *AWSExecutionContext) ListOrganizationAccounts(ctx context.Context) ([]
 	paginator := organizations.NewListAccountsPaginator(ec.orgClient, &organizations.ListAccountsInput{})
 
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+		output, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListAccountsOutput, error) {
+			return paginator.NextPage(ctx)
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to list accounts: %w", err)
+			return nil, circuitbreaker.WrapError(fmt.Errorf("failed to list accounts: %w", err), ec.orgBreaker.Name(), ec.orgBreaker.State())
 		}
 
 		for _, acct := range output.Accounts {
@@ -458,9 +460,11 @@ func (ec *AWSExecutionContext) ListAccountsInOU(ctx context.Context, ouID string
 	})
 
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+		output, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListAccountsForParentOutput, error) {
+			return paginator.NextPage(ctx)
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to list accounts in OU %s: %w", ouID, err)
+			return nil, circuitbreaker.WrapError(fmt.Errorf("failed to list accounts in OU %s: %w", ouID, err), ec.orgBreaker.Name(), ec.orgBreaker.State())
 		}
 
 		for _, acct := range output.Accounts {
@@ -524,9 +528,11 @@ func (ec *AWSExecutionContext) GetAccountTags(ctx context.Context, accountID str
 	})
 
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
+		output, err := circuitbreaker.ExecuteTyped(ec.orgBreaker, ctx, func(ctx context.Context) (*organizations.ListTagsForResourceOutput, error) {
+			return paginator.NextPage(ctx)
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to list tags for account %s: %w", accountID, err)
+			return nil, circuitbreaker.WrapError(fmt.Errorf("failed to list tags for account %s: %w", accountID, err), ec.orgBreaker.Name(), ec.orgBreaker.State())
 		}
 
 		for _, tag := range output.Tags {

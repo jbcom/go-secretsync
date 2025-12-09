@@ -160,7 +160,18 @@ func NewClient(cfg *AwsClient) (*AwsClient, error) {
 	l.Debugf("client=%+v", vc)
 	l.Trace("end")
 	return vc, nil
+}
 
+// ensureBreaker initializes circuit breaker if not already initialized
+// This handles cases where AwsClient is created without NewClient (e.g., in tests)
+func (g *AwsClient) ensureBreaker() {
+	if g.breaker == nil {
+		breakerName := fmt.Sprintf("aws-secretsmanager-%s-%s", g.Name, g.Region)
+		if breakerName == "aws-secretsmanager--" {
+			breakerName = "aws-secretsmanager-default"
+		}
+		g.breaker = circuitbreaker.New(circuitbreaker.DefaultConfig(breakerName))
+	}
 }
 
 func (c *AwsClient) CreateClient(ctx context.Context) error {
@@ -250,6 +261,9 @@ func (g *AwsClient) GetSecret(ctx context.Context, name string) ([]byte, error) 
 	arn := g.accountSecretArns[name]
 	g.arnMu.RUnlock()
 	
+	// Ensure circuit breaker is initialized
+	g.ensureBreaker()
+	
 	// Wrap AWS API call with circuit breaker
 	resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.GetSecretValueOutput, error) {
 		return g.client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
@@ -303,6 +317,9 @@ func (c *AwsClient) createSecret(ctx context.Context, name string, secret []byte
 		csi.Tags = tags
 	}
 	
+	// Ensure circuit breaker is initialized
+	c.ensureBreaker()
+	
 	// Wrap AWS API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(c.breaker, ctx, func(ctx context.Context) (*secretsmanager.CreateSecretOutput, error) {
 		return c.client.CreateSecret(ctx, csi)
@@ -332,6 +349,9 @@ func (c *AwsClient) updateSecret(ctx context.Context, name string, secret []byte
 	if c.EncryptionKey != "" {
 		usi.KmsKeyId = aws.String(c.EncryptionKey)
 	}
+	
+	// Ensure circuit breaker is initialized
+	c.ensureBreaker()
 	
 	// Wrap AWS API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(c.breaker, ctx, func(ctx context.Context) (*secretsmanager.UpdateSecretOutput, error) {
@@ -431,6 +451,9 @@ func (g *AwsClient) getAlternatePath(path string) string {
 
 // getSecretValue retrieves the current value of a secret by ARN with circuit breaker
 func (g *AwsClient) getSecretValue(ctx context.Context, arn string) ([]byte, error) {
+	// Ensure circuit breaker is initialized
+	g.ensureBreaker()
+	
 	resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.GetSecretValueOutput, error) {
 		return g.client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 			SecretId: &arn,
@@ -456,6 +479,9 @@ func (g *AwsClient) DeleteSecret(ctx context.Context, secret string) error {
 	g.arnMu.RLock()
 	arn := g.accountSecretArns[secret]
 	g.arnMu.RUnlock()
+	
+	// Ensure circuit breaker is initialized
+	g.ensureBreaker()
 	
 	// Wrap AWS API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.DeleteSecretOutput, error) {
@@ -506,10 +532,13 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 	for {
 		params := &secretsmanager.ListSecretsInput{
 			NextToken: nextToken,
-			// Exclude secrets scheduled for deletion
-			// Matches terraform-aws-secretsmanager IncludePlannedDeletion=False
-			IncludePlannedDeletion: aws.Bool(false),
-		}
+		// Exclude secrets scheduled for deletion
+		// Matches terraform-aws-secretsmanager IncludePlannedDeletion=False
+		IncludePlannedDeletion: aws.Bool(false),
+	}
+		
+		// Ensure circuit breaker is initialized
+		g.ensureBreaker()
 		
 		// Wrap AWS API call with circuit breaker
 		resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.ListSecretsOutput, error) {
@@ -563,6 +592,9 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 
 // isSecretEmpty checks if a secret has empty or null value with circuit breaker
 func (g *AwsClient) isSecretEmpty(ctx context.Context, arn string) (bool, error) {
+	// Ensure circuit breaker is initialized
+	g.ensureBreaker()
+	
 	resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.GetSecretValueOutput, error) {
 		return g.client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 			SecretId: &arn,
