@@ -56,7 +56,9 @@ set -- "$@" --log-format "$LOG_FORMAT"
 
 # Debug mode - print command
 if [ "$LOG_LEVEL" = "debug" ] || [ "$SECRETSYNC_DEBUG" = "true" ]; then
-    echo "Executing: secretsync $*"
+    printf 'Executing: secretsync'
+    printf ' %s' "$@"
+    printf '\n'
 fi
 
 # Execute with properly quoted arguments to prevent command injection
