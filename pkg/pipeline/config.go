@@ -14,17 +14,21 @@ import (
 )
 
 // LoadConfig loads configuration from file with auto-detection and resolution.
-// Minimal config example:
 //
-//	sources:
-//	  - analytics
-//	  - data-engineers
+// Auto-detection: Clients are automatically enabled based on environment:
+//   - Vault: VAULT_ADDR, VAULT_TOKEN, VAULT_ROLE_ID/SECRET_ID
+//   - AWS: AWS_ACCESS_KEY_ID, AWS_PROFILE, IAM roles, etc.
+//
+// Minimal config example (everything else auto-detected):
+//
 //	targets:
 //	  Production:
 //	    imports: [analytics, data-engineers]
 //
-// The system will auto-detect Vault/AWS auth and resolve sources/targets
-// via fuzzy matching against AWS Organizations.
+// The system will:
+//  1. Auto-detect Vault/AWS from environment
+//  2. Resolve sources/targets via fuzzy matching against AWS Organizations
+//  3. Configure merge store automatically
 func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -38,16 +42,18 @@ func LoadConfig(path string) (*Config, error) {
 
 	cfg.applyDefaults()
 	cfg.expandEnvVars()
-	cfg.AutoConfigure() // Fill in intelligent defaults
 
-	// Also load via Viper for env var override support
+	// Auto-detect clients from environment and apply
+	cfg.AutoDetectAndConfigure()
+
+	// Also load via Viper for explicit env var overrides
 	v := viper.New()
 	v.SetConfigFile(path)
 	v.SetEnvPrefix("SECRETSYNC")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 
-	// Override from environment if set
+	// Explicit overrides take precedence
 	if v.IsSet("log.level") {
 		cfg.Log.Level = v.GetString("log.level")
 	}
@@ -57,6 +63,24 @@ func LoadConfig(path string) (*Config, error) {
 	if v.IsSet("vault.address") {
 		cfg.Vault.Address = v.GetString("vault.address")
 	}
+
+	return &cfg, nil
+}
+
+// LoadConfigWithoutAutoDetect loads config without auto-detection (for testing)
+func LoadConfigWithoutAutoDetect(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+
+	cfg.applyDefaults()
+	cfg.expandEnvVars()
 
 	return &cfg, nil
 }
