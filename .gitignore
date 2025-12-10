@@ -31,3 +31,14 @@ coverage.html
 # Temporary files
 tmp/
 *.tmp
+# Development artifacts (OSS cleanup)
+.kiro/
+.amazonq/
+.cursor/
+memory-bank/
+*_ASSESSMENT.md
+*_COMPLETE.md
+*_SUMMARY.md
+*_PLAN.md
+AGENTS.md
+test-metrics-config.yaml

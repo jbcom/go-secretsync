@@ -1,13 +1,35 @@
+<div align="center">
+
 # SecretSync
 
-> **Universal Secrets Synchronization Pipeline**
+**Enterprise-Grade Secret Synchronization Pipeline**
 
+[![⭐ Star on GitHub](https://img.shields.io/github/stars/jbcom/secretsync?style=social)](https://github.com/jbcom/secretsync/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/jbcom/secretsync.svg)](https://github.com/jbcom/secretsync/releases)
-[![Docker Image](https://img.shields.io/badge/docker-jbcom%2Fsecretsync-blue)](https://hub.docker.com/r/jbcom/secretsync)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jbcom/secretsync)](https://hub.docker.com/r/jbcom/secretsync)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jbcom/secretsync)](https://goreportcard.com/report/github.com/jbcom/secretsync)
 
-SecretSync provides fully automated, real-time secret synchronization across multiple cloud providers and secret stores. It supports a two-phase pipeline architecture (merge → sync) with inheritance, dynamic target discovery, and CI/CD-friendly diff reporting.
+[Quick Start](#quick-start) • [Documentation](./docs/) • [Examples](./examples/) • [GitHub Action](./docs/GITHUB_ACTIONS.md)
+
+</div>
+
+---
+
+SecretSync provides **fully automated, enterprise-grade secret synchronization** across multiple cloud providers and secret stores. Built for scale with a **two-phase pipeline architecture** (merge → sync), it supports inheritance, dynamic target discovery, and CI/CD-friendly diff reporting.
+
+**🚀 Perfect for:** Multi-account AWS environments, Kubernetes deployments, CI/CD pipelines, and enterprise secret management at scale.
+
+## 🤔 Why SecretSync?
+
+| Feature | SecretSync | Alternatives |
+|---------|------------|--------------|
+| **Two-Phase Pipeline** | ✅ Merge → Sync with inheritance | ❌ Simple 1:1 sync only |
+| **AWS Organizations** | ✅ Dynamic discovery with tag filtering | ❌ Manual account management |
+| **Secret Versioning** | ✅ Complete audit trail with rollback | ❌ No version tracking |
+| **Enhanced Diff** | ✅ Side-by-side with intelligent masking | ❌ Basic text diff |
+| **Enterprise Scale** | ✅ 1000+ accounts, circuit breakers | ❌ Limited scalability |
+| **CI/CD Integration** | ✅ GitHub Action + exit codes | ❌ Manual scripting required |
 
 ## ✨ Key Features
 
@@ -243,14 +265,30 @@ See [GitHub Actions documentation](./docs/GITHUB_ACTIONS.md) for complete usage 
 
 **Value Masking (v1.2.0)**: Sensitive values are automatically masked by default. Use `--show-values` flag to display actual values (use with caution in CI/CD).
 
-## Documentation
+## 📚 Documentation
 
-- [Architecture Overview](./docs/ARCHITECTURE.md)
-- [Two-Phase Pipeline](./docs/TWO_PHASE_ARCHITECTURE.md)
-- [Pipeline Configuration](./docs/PIPELINE.md)
-- [Deployment Guide](./docs/DEPLOYMENT.md)
-- [Security Configuration](./docs/SECURITY.md)
-- [Usage Reference](./docs/USAGE.md)
+### Getting Started
+- [🚀 Getting Started Guide](./docs/GETTING_STARTED.md) - Step-by-step setup tutorial
+- [❓ FAQ](./docs/FAQ.md) - Frequently asked questions
+- [📋 Examples](./examples/) - Complete configuration examples
+
+### Core Documentation
+- [🏗️ Architecture Overview](./docs/ARCHITECTURE.md) - System design and components
+- [🔄 Two-Phase Pipeline](./docs/TWO_PHASE_ARCHITECTURE.md) - Merge → Sync architecture
+- [⚙️ Pipeline Configuration](./docs/PIPELINE.md) - Configuration reference
+- [🚀 Deployment Guide](./docs/DEPLOYMENT.md) - Production deployment patterns
+
+### Advanced Topics
+- [🔒 Security Configuration](./docs/SECURITY.md) - Security best practices
+- [📊 Observability](./docs/OBSERVABILITY.md) - Monitoring and metrics
+- [🎯 GitHub Actions](./docs/GITHUB_ACTIONS.md) - CI/CD integration guide
+- [📖 Usage Reference](./docs/USAGE.md) - Complete CLI reference
+
+### Community
+- [🗺️ Roadmap](./docs/ROADMAP.md) - Future development plans
+- [🤝 Contributing](./CONTRIBUTING.md) - How to contribute
+- [🛡️ Security Policy](./SECURITY.md) - Security reporting
+- [📜 Code of Conduct](./CODE_OF_CONDUCT.md) - Community guidelines
 
 ## Helm Deployment
 
@@ -389,16 +427,35 @@ make test-env-down
 
 For detailed documentation, see [tests/integration/README.md](./tests/integration/README.md).
 
-## License
+## 🌟 Community & Support
 
-[MIT License](./LICENSE)
+### Getting Help
+- **📚 Documentation**: Comprehensive guides and examples
+- **💬 GitHub Discussions**: Community Q&A and feature discussions
+- **🐛 Issues**: Bug reports and feature requests
+- **🔒 Security**: Private security vulnerability reporting
 
-## Original Author
+### Contributing
+We welcome contributions! See our [Contributing Guide](./CONTRIBUTING.md) for:
+- 🛠️ Development setup
+- 📝 Code style guidelines  
+- 🧪 Testing requirements
+- 📋 Pull request process
 
-**Robert Lestak** - [github.com/robertlestak](https://github.com/robertlestak)
+### Community
+- **⭐ Star the repo** to show your support
+- **🐦 Follow updates** on GitHub
+- **📢 Share** your success stories
+- **🤝 Contribute** code, docs, or feedback
 
-Original project: [vault-secret-sync](https://github.com/robertlestak/vault-secret-sync)
+## 📄 License
 
-## Current Maintainer
+[MIT License](./LICENSE) - Free for commercial and personal use
 
-**jbcom** - [github.com/jbcom](https://github.com/jbcom)
+## 🙏 Attribution
+
+SecretSync originated as a fork of [vault-secret-sync](https://github.com/robertlestak/vault-secret-sync) by **Robert Lestak**. We thank Robert for creating the original foundation.
+
+SecretSync has evolved into an independent project with its own architecture, features, and roadmap, while maintaining the same MIT license and open-source spirit.
+
+**Current Maintainer**: [jbcom](https://github.com/jbcom)

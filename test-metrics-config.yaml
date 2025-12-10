@@ -1,8 +1,0 @@
-vault_sources:
-  - mount: secret/test/
-    max_secrets: 100
-
-targets:
-  - name: test-target
-    type: aws_secretsmanager
-    region: us-east-1

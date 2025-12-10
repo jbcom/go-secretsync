@@ -1,0 +1,99 @@
+name: Bug Report
+description: Report a bug to help us improve SecretSync
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below.
+        
+        **⚠️ Security Notice**: Never include real credentials or sensitive data in bug reports.
+
+  - type: input
+    id: version
+    attributes:
+      label: SecretSync Version
+      description: What version of SecretSync are you using?
+      placeholder: "v1.2.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment Method
+      description: How are you running SecretSync?
+      options:
+        - CLI (binary)
+        - Docker
+        - GitHub Action
+        - Kubernetes/Helm
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened and what you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration (Sanitized)
+      description: Your SecretSync configuration with all secrets removed
+      render: yaml
+      placeholder: |
+        vault:
+          address: "https://vault.example.com"
+        # ... rest of config with secrets removed
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Configure SecretSync with...
+        2. Run command...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant log output (sanitize any sensitive information)
+      render: text
+      placeholder: Paste relevant logs here (remove any secrets/credentials)
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Additional environment details
+      placeholder: |
+        - OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 10]
+        - Go version: [if building from source]
+        - Vault version: [if relevant]
+        - AWS CLI version: [if relevant]
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have removed all sensitive information from this report
+          required: true
+        - label: I have tested with the latest version of SecretSync
+          required: true
