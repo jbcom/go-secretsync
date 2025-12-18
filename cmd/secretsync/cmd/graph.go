@@ -80,7 +80,7 @@ func printTextGraph(cfg *pipeline.Config, graph *pipeline.Graph) {
 		fmt.Printf("\n   Level %d:\n", i)
 		for _, name := range level {
 			target := cfg.Targets[name]
-			
+
 			// Categorize imports
 			var sources, inherited []string
 			for _, imp := range target.Imports {
@@ -136,7 +136,7 @@ func printInheritanceTree(cfg *pipeline.Config, graph *pipeline.Graph, name stri
 	if isLast {
 		connector = "└──"
 	}
-	
+
 	target := cfg.Targets[name]
 	fmt.Printf("%s%s %s (→ %s)\n", prefix, connector, name, target.AccountID)
 

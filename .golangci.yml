@@ -1,14 +1,34 @@
 # yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
 version: "2"
 
+# Linters configuration
+# In golangci-lint v2, gosimple is part of staticcheck
+# gofmt and goimports are formatters, configured separately
 linters:
-  disable:
-    - errcheck  # Many Close() calls without error checking
+  enable:
+    - errcheck      # Check for unchecked errors
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detects unused assignments
+    - staticcheck   # Includes gosimple in v2
+    - unused        # Checks for unused code
+    - misspell      # Find commonly misspelled words
   settings:
     govet:
       enable-all: true
       disable:
         - fieldalignment  # Too noisy for this codebase
+
+# Formatters (gofmt, goimports) - new in v2
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+
+run:
+  timeout: 5m
 
 output:
   formats:

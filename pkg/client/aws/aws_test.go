@@ -429,19 +429,19 @@ func TestAwsClient_DeepCopyConcurrentSafety(t *testing.T) {
 	const numCopiers = 20
 	var wg sync.WaitGroup
 
-		// Perform concurrent deep copies
-		for i := 0; i < numCopiers; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for j := 0; j < 50; j++ {
-					copied := original.DeepCopy()
-					require.NotNil(t, copied)
-					// Verify that the copied map is not nil and its length is within the expected range.
-					// The original map starts with 100 items and grows to 200.
-					require.NotNil(t, copied.accountSecretArns)
-					assert.GreaterOrEqual(t, len(copied.accountSecretArns), 100)
-					assert.LessOrEqual(t, len(copied.accountSecretArns), 200)
+	// Perform concurrent deep copies
+	for i := 0; i < numCopiers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 50; j++ {
+				copied := original.DeepCopy()
+				require.NotNil(t, copied)
+				// Verify that the copied map is not nil and its length is within the expected range.
+				// The original map starts with 100 items and grows to 200.
+				require.NotNil(t, copied.accountSecretArns)
+				assert.GreaterOrEqual(t, len(copied.accountSecretArns), 100)
+				assert.LessOrEqual(t, len(copied.accountSecretArns), 200)
 			}
 		}()
 	}

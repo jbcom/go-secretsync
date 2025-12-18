@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/jbcom/secretsync/pkg/pipeline"
-	"github.com/spf13/cobra"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 var validateCmd = &cobra.Command{

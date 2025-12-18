@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	reqctx "github.com/jbcom/secretsync/pkg/context"
 	"github.com/jbcom/secretsync/pkg/client/aws"
 	"github.com/jbcom/secretsync/pkg/client/vault"
+	reqctx "github.com/jbcom/secretsync/pkg/context"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

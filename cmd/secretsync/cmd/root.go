@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/jbcom/secretsync/pkg/observability"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -117,10 +117,10 @@ func initConfig() {
 // startMetricsServer starts the Prometheus metrics HTTP server
 func startMetricsServer() {
 	addr := fmt.Sprintf("%s:%d", metricsAddr, metricsPort)
-	
+
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", observability.Handler())
-	
+
 	// Add health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -133,9 +133,8 @@ func startMetricsServer() {
 	}
 
 	log.WithField("address", addr).Info("Starting metrics server")
-	
+
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.WithError(err).Error("Metrics server error")
 	}
 }
-

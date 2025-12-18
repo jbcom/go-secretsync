@@ -20,12 +20,12 @@ import (
 
 // Environment variables for integration testing
 const (
-	envVaultAddr     = "VAULT_ADDR"
-	envVaultToken    = "VAULT_TOKEN"
-	envAWSEndpoint   = "AWS_ENDPOINT_URL"
-	envAWSRegion     = "AWS_REGION"
-	envAWSAccessKey  = "AWS_ACCESS_KEY_ID"
-	envAWSSecretKey  = "AWS_SECRET_ACCESS_KEY"
+	envVaultAddr    = "VAULT_ADDR"
+	envVaultToken   = "VAULT_TOKEN"
+	envAWSEndpoint  = "AWS_ENDPOINT_URL"
+	envAWSRegion    = "AWS_REGION"
+	envAWSAccessKey = "AWS_ACCESS_KEY_ID"
+	envAWSSecretKey = "AWS_SECRET_ACCESS_KEY"
 )
 
 func skipIfNoIntegrationEnv(t *testing.T) {
@@ -114,20 +114,20 @@ func seedVaultSecrets(t *testing.T, client *api.Client) {
 	// Source A: base layer
 	writeVaultSecret(t, client, "secret/data/source-a/config", map[string]interface{}{
 		"data": map[string]interface{}{
-			"scalar":    "value-a",
-			"list":      []interface{}{"a1", "a2"},
-			"dict":      map[string]interface{}{"key1": "from-a", "key2": "from-a"},
-			"nested":    map[string]interface{}{"deep": map[string]interface{}{"value": "a"}},
+			"scalar": "value-a",
+			"list":   []interface{}{"a1", "a2"},
+			"dict":   map[string]interface{}{"key1": "from-a", "key2": "from-a"},
+			"nested": map[string]interface{}{"deep": map[string]interface{}{"value": "a"}},
 		},
 	})
 
 	// Source B: override layer (merges with A)
 	writeVaultSecret(t, client, "secret/data/source-b/config", map[string]interface{}{
 		"data": map[string]interface{}{
-			"scalar":    "value-b",                           // override
-			"list":      []interface{}{"b1"},                 // append
-			"dict":      map[string]interface{}{"key2": "from-b", "key3": "from-b"}, // merge
-			"nested":    map[string]interface{}{"deep": map[string]interface{}{"extra": "b"}},
+			"scalar": "value-b",                                                  // override
+			"list":   []interface{}{"b1"},                                        // append
+			"dict":   map[string]interface{}{"key2": "from-b", "key3": "from-b"}, // merge
+			"nested": map[string]interface{}{"deep": map[string]interface{}{"extra": "b"}},
 		},
 	})
 

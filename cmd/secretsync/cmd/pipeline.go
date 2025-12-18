@@ -11,8 +11,8 @@ import (
 
 	"github.com/jbcom/secretsync/pkg/diff"
 	"github.com/jbcom/secretsync/pkg/pipeline"
-	"github.com/spf13/cobra"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -79,7 +79,7 @@ func init() {
 	pipelineCmd.Flags().BoolVar(&syncOnly, "sync-only", false, "only run sync phase")
 	pipelineCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode (no changes)")
 	pipelineCmd.Flags().BoolVar(&discoverTargets, "discover", false, "enable dynamic target discovery from AWS Organizations/Identity Center")
-	
+
 	// Diff and output options
 	pipelineCmd.Flags().StringVarP(&outputFormat, "output", "o", "human", "output format: human, json, github, compact")
 	pipelineCmd.Flags().BoolVar(&computeDiff, "diff", false, "compute and show diff even when not in dry-run mode")
@@ -98,7 +98,7 @@ func runPipeline(cmd *cobra.Command, args []string) error {
 	// Create pipeline from config file
 	var p *pipeline.Pipeline
 	var err error
-	
+
 	if discoverTargets {
 		// Use context-aware constructor for dynamic target discovery
 		l.Info("Dynamic target discovery enabled")

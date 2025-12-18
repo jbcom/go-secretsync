@@ -37,11 +37,11 @@ func TestResourceResolver_Resolve(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		input          string
-		expectedType   ResourceType
-		expectedID     string
-		expectedConf   MatchConfidence
+		name         string
+		input        string
+		expectedType ResourceType
+		expectedID   string
+		expectedConf MatchConfidence
 	}{
 		{
 			name:         "exact AWS account ID",
@@ -180,11 +180,11 @@ func TestTokenize(t *testing.T) {
 
 func TestDetectAuth(t *testing.T) {
 	tests := []struct {
-		name           string
-		cfg            *Config
-		expectedVault  bool
-		expectedAWS    bool
-		vaultMethod    string
+		name          string
+		cfg           *Config
+		expectedVault bool
+		expectedAWS   bool
+		vaultMethod   string
 	}{
 		{
 			name: "vault token auth",

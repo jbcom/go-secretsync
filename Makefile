@@ -1,12 +1,13 @@
 # SecretSync Makefile
 
-.PHONY: all build test test-unit test-integration lint clean help
+.PHONY: all build test test-unit test-integration lint lint-fix deps fmt tidy clean help
 
 # Go parameters
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
+GOFMT=$(GOCMD) fmt
 GOLINT=golangci-lint
 
 # Build info
@@ -23,13 +24,14 @@ all: lint test build
 
 ## Build targets
 build:
-	$(GOBUILD) -ldflags "$(LDFLAGS)" -o $(BINARY_NAME) ./cmd/secretsync
+	@mkdir -p bin
+	$(GOBUILD) -ldflags "$(LDFLAGS)" -o bin/$(BINARY_NAME) ./cmd/secretsync
 
 ## Test targets
 test: test-unit
 
 test-unit:
-	$(GOTEST) -v -race ./...
+	$(GOTEST) -race -coverprofile=coverage.out ./...
 
 # Integration tests require LocalStack + Vault
 # Either run manually with docker-compose or let CI handle it
@@ -86,7 +88,14 @@ lint:
 lint-fix:
 	$(GOLINT) run --fix
 
+## Formatting
+fmt:
+	$(GOFMT) ./...
+
 ## Dependency management
+tidy:
+	$(GOMOD) tidy
+
 deps:
 	$(GOMOD) download
 	$(GOMOD) tidy
@@ -94,19 +103,23 @@ deps:
 ## Clean targets
 clean:
 	rm -f $(BINARY_NAME)
+	rm -rf bin/
+	rm -f coverage.out
 	docker-compose -f docker-compose.test.yml down -v 2>/dev/null || true
 
 ## Help
 help:
 	@echo "Available targets:"
-	@echo "  build                 - Build the binary"
-	@echo "  test                  - Run unit tests"
-	@echo "  test-unit             - Run unit tests"
+	@echo "  build                 - Build the binary to bin/"
+	@echo "  test                  - Run unit tests with race detection and coverage"
+	@echo "  test-unit             - Run unit tests with race detection and coverage"
 	@echo "  test-integration      - Run integration tests (auto-detects environment)"
 	@echo "  test-integration-docker - Run integration tests via docker-compose"
 	@echo "  test-env-up           - Start LocalStack + Vault for local testing"
 	@echo "  test-env-down         - Stop test environment"
-	@echo "  lint                  - Run linters"
-	@echo "  lint-fix              - Run linters with auto-fix"
+	@echo "  lint                  - Run golangci-lint"
+	@echo "  lint-fix              - Run golangci-lint with auto-fix"
+	@echo "  fmt                   - Format Go code with go fmt"
+	@echo "  tidy                  - Run go mod tidy"
 	@echo "  deps                  - Download and tidy dependencies"
 	@echo "  clean                 - Clean build artifacts and test containers"

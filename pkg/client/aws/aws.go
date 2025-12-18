@@ -58,7 +58,7 @@ type AwsClient struct {
 	cachedSecrets []string     `yaml:"-" json:"-"`
 	cacheExpiry   time.Time    `yaml:"-" json:"-"`
 	cacheMu       sync.RWMutex `yaml:"-" json:"-"`
-	
+
 	// Circuit breaker for AWS API calls
 	breaker     *circuitbreaker.CircuitBreaker `yaml:"-" json:"-"`
 	breakerOnce sync.Once                      `yaml:"-" json:"-"`
@@ -154,11 +154,11 @@ func NewClient(cfg *AwsClient) (*AwsClient, error) {
 	if vc.CacheTTL == 0 {
 		vc.CacheTTL = 5 * time.Minute
 	}
-	
+
 	// Initialize circuit breaker for AWS API calls
 	breakerName := fmt.Sprintf("aws-secretsmanager-%s-%s", vc.Name, vc.Region)
 	vc.breaker = circuitbreaker.New(circuitbreaker.DefaultConfig(breakerName))
-	
+
 	l.Debugf("client=%+v", vc)
 	l.Trace("end")
 	return vc, nil
@@ -265,10 +265,10 @@ func (g *AwsClient) GetSecret(ctx context.Context, name string) ([]byte, error) 
 	g.arnMu.RLock()
 	arn := g.accountSecretArns[name]
 	g.arnMu.RUnlock()
-	
+
 	// Ensure circuit breaker is initialized
 	g.ensureBreaker()
-	
+
 	// Wrap AWS API call with circuit breaker
 	resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.GetSecretValueOutput, error) {
 		return g.client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
@@ -321,10 +321,10 @@ func (c *AwsClient) createSecret(ctx context.Context, name string, secret []byte
 		}
 		csi.Tags = tags
 	}
-	
+
 	// Ensure circuit breaker is initialized
 	c.ensureBreaker()
-	
+
 	// Wrap AWS API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(c.breaker, ctx, func(ctx context.Context) (*secretsmanager.CreateSecretOutput, error) {
 		return c.client.CreateSecret(ctx, csi)
@@ -354,10 +354,10 @@ func (c *AwsClient) updateSecret(ctx context.Context, name string, secret []byte
 	if c.EncryptionKey != "" {
 		usi.KmsKeyId = aws.String(c.EncryptionKey)
 	}
-	
+
 	// Ensure circuit breaker is initialized
 	c.ensureBreaker()
-	
+
 	// Wrap AWS API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(c.breaker, ctx, func(ctx context.Context) (*secretsmanager.UpdateSecretOutput, error) {
 		return c.client.UpdateSecret(ctx, usi)
@@ -470,7 +470,7 @@ func (g *AwsClient) getAlternatePath(path string) string {
 func (g *AwsClient) getSecretValue(ctx context.Context, arn string) ([]byte, error) {
 	// Ensure circuit breaker is initialized
 	g.ensureBreaker()
-	
+
 	resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.GetSecretValueOutput, error) {
 		return g.client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 			SecretId: &arn,
@@ -503,10 +503,10 @@ func (g *AwsClient) DeleteSecret(ctx context.Context, secret string) error {
 	g.arnMu.RLock()
 	arn := g.accountSecretArns[secret]
 	g.arnMu.RUnlock()
-	
+
 	// Ensure circuit breaker is initialized
 	g.ensureBreaker()
-	
+
 	// Wrap AWS API call with circuit breaker
 	_, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.DeleteSecretOutput, error) {
 		return g.client.DeleteSecret(ctx, &secretsmanager.DeleteSecretInput{
@@ -567,14 +567,14 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 	for {
 		params := &secretsmanager.ListSecretsInput{
 			NextToken: nextToken,
-		// Exclude secrets scheduled for deletion
-		// Matches terraform-aws-secretsmanager IncludePlannedDeletion=False
-		IncludePlannedDeletion: aws.Bool(false),
-	}
-		
+			// Exclude secrets scheduled for deletion
+			// Matches terraform-aws-secretsmanager IncludePlannedDeletion=False
+			IncludePlannedDeletion: aws.Bool(false),
+		}
+
 		// Ensure circuit breaker is initialized
 		g.ensureBreaker()
-		
+
 		// Wrap AWS API call with circuit breaker
 		resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.ListSecretsOutput, error) {
 			return g.client.ListSecrets(ctx, params)
@@ -609,7 +609,7 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 		}
 		nextToken = resp.NextToken
 	}
-	
+
 	// Record pagination metrics
 	observability.AWSPaginationCount.WithLabelValues("list_secrets").Observe(float64(pageCount))
 
@@ -635,7 +635,7 @@ func (g *AwsClient) ListSecrets(ctx context.Context, p string) ([]string, error)
 func (g *AwsClient) isSecretEmpty(ctx context.Context, arn string) (bool, error) {
 	// Ensure circuit breaker is initialized
 	g.ensureBreaker()
-	
+
 	resp, err := circuitbreaker.ExecuteTyped(g.breaker, ctx, func(ctx context.Context) (*secretsmanager.GetSecretValueOutput, error) {
 		return g.client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 			SecretId: &arn,

@@ -161,8 +161,8 @@ func getEmbeddedTestData() *TestData {
 					"tags":      []interface{}{"engineering", "database", "extra-tag"},
 				},
 				"config/tools": map[string]interface{}{
-					"dbt_version":  "1.5.0",
-					"airflow_url":  "https://airflow.internal",
+					"dbt_version": "1.5.0",
+					"airflow_url": "https://airflow.internal",
 					"spark_config": map[string]interface{}{
 						"executor_memory": "4g",
 						"driver_memory":   "2g",
