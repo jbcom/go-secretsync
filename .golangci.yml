@@ -17,6 +17,34 @@ linters:
       enable-all: true
       disable:
         - fieldalignment  # Too noisy for this codebase
+    errcheck:
+      # Ignore common functions where return values are typically unused
+      exclude-functions:
+        - io.Closer.Close
+        - io.ReadCloser.Close
+        - (*os.File).Close
+        - (net/http.ResponseWriter).Write
+        - os.Setenv
+        - os.Unsetenv
+        - os.Remove
+        - (*github.com/spf13/cobra.Command).MarkFlagRequired
+        - (*github.com/spf13/viper.Viper).BindPFlag
+        - github.com/spf13/viper.BindPFlag
+        - (*github.com/jbcom/secretsync/pkg/client/vault.VaultClient).Close
+  # Exclusion rules (v2 format - under linters, not issues)
+  exclusions:
+    presets:
+      - std-error-handling
+      - common-false-positives
+    rules:
+      # Ignore errcheck in test files for setup/teardown
+      - path: ".*_test\\.go"
+        linters:
+          - errcheck
+      # Ignore errcheck in integration tests directory
+      - path: "tests/integration/.*"
+        linters:
+          - errcheck
 
 # Formatters (gofmt, goimports) - new in v2
 formatters:

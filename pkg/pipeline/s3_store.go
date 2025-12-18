@@ -158,7 +158,7 @@ func (s *S3MergeStore) ReadSecret(ctx context.Context, targetName, secretName st
 	if err != nil {
 		return nil, fmt.Errorf("failed to get object: %w", err)
 	}
-	defer output.Body.Close()
+	defer func() { _ = output.Body.Close() }()
 
 	body, err := io.ReadAll(output.Body)
 	if err != nil {
@@ -327,7 +327,7 @@ func (s *S3MergeStore) ReadMergedBundle(ctx context.Context, targetName, bundleI
 	if err != nil {
 		return nil, fmt.Errorf("failed to get object: %w", err)
 	}
-	defer output.Body.Close()
+	defer func() { _ = output.Body.Close() }()
 
 	body, err := io.ReadAll(output.Body)
 	if err != nil {
@@ -425,7 +425,7 @@ func (s *S3MergeStore) GetVersion(ctx context.Context, path string, version int)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get version %d: %w", version, err)
 	}
-	defer output.Body.Close()
+	defer func() { _ = output.Body.Close() }()
 
 	body, err := io.ReadAll(output.Body)
 	if err != nil {
@@ -497,7 +497,7 @@ func (s *S3MergeStore) ListVersions(ctx context.Context, path string) ([]SecretV
 			}
 
 			body, err := io.ReadAll(versionOutput.Body)
-			versionOutput.Body.Close()
+			_ = versionOutput.Body.Close()
 			if err != nil {
 				l.WithError(err).WithField("key", key).Warn("Failed to read version body")
 				continue
