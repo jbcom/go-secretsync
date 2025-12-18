@@ -22,6 +22,10 @@ build/
 *.out
 coverage.txt
 coverage.html
+coverage/
+
+# Pre-commit cache
+.pre-commit-cache/
 
 # IDE
 .vscode/

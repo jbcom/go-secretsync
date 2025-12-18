@@ -1,0 +1,40 @@
+# yamllint configuration
+# See https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Allow long lines for URLs and complex values
+  line-length:
+    max: 200
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+
+  # Allow multiple documents in a file (e.g., Kubernetes manifests)
+  document-start: disable
+
+  # Relax comment spacing for inline comments
+  comments:
+    require-starting-space: true
+    ignore-shebangs: true
+    min-spaces-from-content: 1
+
+  # Allow empty values (common in YAML configs)
+  empty-values: disable
+
+  # Trust the indentation
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+
+  # Truthy values
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+    check-keys: false
+
+# Ignore certain paths
+ignore: |
+  .git/
+  vendor/
+  node_modules/
+  deploy/charts/*/templates/
