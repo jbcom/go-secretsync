@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	reqctx "github.com/jbcom/secretsync/pkg/context"
 	"github.com/jbcom/secretsync/pkg/client/vault"
+	reqctx "github.com/jbcom/secretsync/pkg/context"
 	"github.com/jbcom/secretsync/pkg/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 // mergeTarget executes merge operations for a single target.
-// 
+//
 // Merge is a two-phase operation:
 // 1. Read secrets from N sources in sequence (order determines deepmerge priority)
 // 2. Write merged result as JSON blob to deterministic path in merge store
@@ -248,7 +248,7 @@ func (p *Pipeline) writeMergedBundleToVault(ctx context.Context, bundlePath stri
 	// Write each merged secret
 	for relPath, data := range secrets {
 		fullPath := fmt.Sprintf("%s/%s", bundlePath, relPath)
-		
+
 		secretData, ok := data.(map[string]interface{})
 		if !ok {
 			l.WithField("path", relPath).Warn("Secret data is not a map, skipping")

@@ -392,7 +392,7 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 				},
 			},
 		}
-		
+
 		src := map[string]interface{}{
 			"aws": map[string]interface{}{
 				"services": map[string]interface{}{
@@ -410,9 +410,9 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 				},
 			},
 		}
-		
+
 		result := DeepMerge(dst, src)
-		
+
 		// Navigate to nested structure
 		aws := result["aws"].(map[string]interface{})
 		services := aws["services"].(map[string]interface{})
@@ -420,7 +420,7 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 		instances := rds["instances"].(map[string]interface{})
 		prod := instances["prod"].(map[string]interface{})
 		staging := instances["staging"].(map[string]interface{})
-		
+
 		// Verify prod merged correctly
 		if prod["host"] != "prod.example.com" {
 			t.Errorf("expected prod.host preserved, got %v", prod["host"])
@@ -434,13 +434,13 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 		if prod["database"] != "analytics" {
 			t.Errorf("expected prod.database added, got %v", prod["database"])
 		}
-		
+
 		// Verify staging added
 		if staging["host"] != "staging.example.com" {
 			t.Errorf("expected staging.host added, got %v", staging["host"])
 		}
 	})
-	
+
 	t.Run("list append with complex objects", func(t *testing.T) {
 		// FSC appends lists of configuration objects
 		dst := map[string]interface{}{
@@ -451,7 +451,7 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 				},
 			},
 		}
-		
+
 		src := map[string]interface{}{
 			"security_groups": []interface{}{
 				map[string]interface{}{
@@ -460,17 +460,17 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 				},
 			},
 		}
-		
+
 		result := DeepMerge(dst, src)
-		
+
 		sgs := result["security_groups"].([]interface{})
 		if len(sgs) != 2 {
 			t.Fatalf("expected 2 security groups, got %d", len(sgs))
 		}
-		
+
 		sg0 := sgs[0].(map[string]interface{})
 		sg1 := sgs[1].(map[string]interface{})
-		
+
 		if sg0["id"] != "sg-123" || sg0["name"] != "web-tier" {
 			t.Errorf("expected first sg preserved, got %v", sg0)
 		}
@@ -478,7 +478,7 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 			t.Errorf("expected second sg appended, got %v", sg1)
 		}
 	})
-	
+
 	t.Run("empty list merging", func(t *testing.T) {
 		dst := map[string]interface{}{
 			"tags": []interface{}{},
@@ -486,15 +486,15 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 		src := map[string]interface{}{
 			"tags": []interface{}{"new-tag"},
 		}
-		
+
 		result := DeepMerge(dst, src)
 		tags := result["tags"].([]interface{})
-		
+
 		if len(tags) != 1 || tags[0] != "new-tag" {
 			t.Errorf("expected [new-tag], got %v", tags)
 		}
 	})
-	
+
 	t.Run("nil value handling", func(t *testing.T) {
 		// nil in src should preserve dst value (not override)
 		dst := map[string]interface{}{
@@ -503,14 +503,14 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 		src := map[string]interface{}{
 			"keep": nil,
 		}
-		
+
 		result := DeepMerge(dst, src)
-		
+
 		if result["keep"] != "original" {
 			t.Errorf("expected nil to preserve dst value, got %v", result["keep"])
 		}
 	})
-	
+
 	t.Run("mixed types - override behavior", func(t *testing.T) {
 		// When types conflict, src overrides dst
 		testCases := []struct {
@@ -538,21 +538,21 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 				want: []interface{}{"new"},
 			},
 		}
-		
+
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				dst := map[string]interface{}{"field": tc.dst}
 				src := map[string]interface{}{"field": tc.src}
-				
+
 				result := DeepMerge(dst, src)
-				
+
 				if !DeepEqual(result["field"], tc.want) {
 					t.Errorf("expected %v, got %v", tc.want, result["field"])
 				}
 			})
 		}
 	})
-	
+
 	t.Run("JSON round-trip compatibility", func(t *testing.T) {
 		// Verify that merging works correctly through JSON serialization
 		dstJSON := []byte(`{
@@ -563,7 +563,7 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 				"retries": 3
 			}
 		}`)
-		
+
 		srcJSON := []byte(`{
 			"api_keys": {"datadog": "dd_456"},
 			"features": ["analytics"],
@@ -571,29 +571,29 @@ func TestDeepMerge_FSCCompatibility(t *testing.T) {
 				"debug": true
 			}
 		}`)
-		
+
 		resultJSON, err := DeepMergeJSON(dstJSON, srcJSON)
 		if err != nil {
 			t.Fatalf("DeepMergeJSON failed: %v", err)
 		}
-		
+
 		var result map[string]interface{}
 		if err := json.Unmarshal(resultJSON, &result); err != nil {
 			t.Fatalf("Failed to unmarshal result: %v", err)
 		}
-		
+
 		// Verify api_keys merged
 		apiKeys := result["api_keys"].(map[string]interface{})
 		if apiKeys["stripe"] != "sk_test_123" || apiKeys["datadog"] != "dd_456" {
 			t.Errorf("api_keys not merged correctly: %v", apiKeys)
 		}
-		
+
 		// Verify features appended
 		features := result["features"].([]interface{})
 		if len(features) != 3 {
 			t.Errorf("expected 3 features, got %d: %v", len(features), features)
 		}
-		
+
 		// Verify config merged
 		config := result["config"].(map[string]interface{})
 		if config["timeout"] != float64(30) {

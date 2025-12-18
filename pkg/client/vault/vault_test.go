@@ -259,13 +259,13 @@ func TestVaultClient_GetKVSecretOnce(t *testing.T) {
 				t.Skip("Requires full Vault API mock or integration test")
 				return
 			}
-			
+
 			client := &VaultClient{
 				Address: "http://localhost:8200",
 			}
 
 			ctx := context.Background()
-			
+
 			// Test error cases that don't require Vault client
 			_, err := client.GetKVSecretOnce(ctx, tt.path)
 
@@ -341,12 +341,12 @@ func TestVaultClient_SetDefaults(t *testing.T) {
 
 func TestVaultClient_WriteSecretOnce(t *testing.T) {
 	tests := []struct {
-		name     string
-		path     string
-		secret   map[string]interface{}
-		cas      *int
-		wantErr  bool
-		errMsg   string
+		name    string
+		path    string
+		secret  map[string]interface{}
+		cas     *int
+		wantErr bool
+		errMsg  string
 	}{
 		{
 			name: "Write secret with CAS",
@@ -397,7 +397,7 @@ func TestVaultClient_WriteSecretOnce(t *testing.T) {
 				t.Skip("Requires full Vault mock")
 				return
 			}
-			
+
 			// Create a basic client
 			client := &VaultClient{
 				Address: "http://localhost:8200",
@@ -449,7 +449,7 @@ func TestVaultClient_DeleteSecret(t *testing.T) {
 				t.Skip("Requires full Vault mock")
 				return
 			}
-			
+
 			client := &VaultClient{
 				Address: "http://localhost:8200",
 			}
@@ -530,7 +530,7 @@ func TestVaultClient_WriteSecretWithMerge(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Skip - these tests require full Vault API mocking
 			t.Skip("Requires full Vault mock or integration test")
-			
+
 			client := &VaultClient{
 				Address: "http://localhost:8200",
 				Merge:   tt.merge,
@@ -543,7 +543,7 @@ func TestVaultClient_WriteSecretWithMerge(t *testing.T) {
 			// This test validates the merge logic flow
 			// Full execution requires mocking the Vault API
 			_, err := client.WriteSecret(ctx, meta, "secret/test", data)
-			
+
 			// Without mocks, we expect connection errors
 			// The test validates that the code compiles and has the right structure
 			assert.Error(t, err) // Expected due to no real Vault
@@ -558,12 +558,12 @@ func intPtr(i int) *int {
 
 func TestVaultClient_ListSecretsRecursive(t *testing.T) {
 	tests := []struct {
-		name         string
-		basePath     string
+		name          string
+		basePath      string
 		mockResponses map[string]*api.Secret
-		expected     []string
-		wantErr      bool
-		errMsg       string
+		expected      []string
+		wantErr       bool
+		errMsg        string
 	}{
 		{
 			name:     "Single level secrets",
@@ -600,7 +600,7 @@ func TestVaultClient_ListSecretsRecursive(t *testing.T) {
 			},
 			expected: []string{
 				"secret/app/config",
-				"secret/app/database", 
+				"secret/app/database",
 				"secret/app/env/prod",
 				"secret/app/env/staging",
 				"secret/app/env/dev/local",
@@ -842,10 +842,10 @@ func TestVaultClient_ListSecretsRecursive_PathTraversalPrevention(t *testing.T) 
 
 	// Malicious keys that should be filtered out
 	maliciousKeys := []string{
-		"../../../etc/passwd",   // Directory traversal
-		"valid\x00byte",         // Null byte injection
-		"//double//slash",       // Double slashes
-		"/absolute/path",        // Absolute path
+		"../../../etc/passwd", // Directory traversal
+		"valid\x00byte",       // Null byte injection
+		"//double//slash",     // Double slashes
+		"/absolute/path",      // Absolute path
 	}
 
 	// Create mock that returns both malicious and valid keys

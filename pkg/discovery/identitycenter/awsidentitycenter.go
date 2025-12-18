@@ -27,6 +27,8 @@ type IdentityCenterClient struct {
 	Region string `yaml:"region,omitempty" json:"region,omitempty"`
 	// IdentityStoreID is the Identity Store ID (auto-discovered if empty)
 	IdentityStoreID string `yaml:"identityStoreId,omitempty" json:"identityStoreId,omitempty"`
+	// InstanceARN is the SSO Instance ARN (auto-discovered if empty)
+	InstanceARN string `yaml:"instanceArn,omitempty" json:"instanceArn,omitempty"`
 	// RoleArn for cross-account access to Identity Center
 	RoleArn string `yaml:"roleArn,omitempty" json:"roleArn,omitempty"`
 
@@ -43,11 +45,23 @@ type IdentityCenterClient struct {
 	// Options: "json", "yaml", "list"
 	OutputFormat string `yaml:"outputFormat,omitempty" json:"outputFormat,omitempty"`
 
+	// Enhanced discovery (v1.2.0)
+	DiscoverPermissionSets bool `yaml:"discoverPermissionSets,omitempty" json:"discoverPermissionSets,omitempty"`
+	CacheAssignments       bool `yaml:"cacheAssignments,omitempty" json:"cacheAssignments,omitempty"`
+
 	// DiscoveredAccounts holds the results after ListSecrets is called
 	DiscoveredAccounts []DiscoveredAccount `yaml:"-" json:"-"`
+	// PermissionSets holds discovered permission sets
+	PermissionSets []PermissionSet `yaml:"-" json:"-"`
+	// AccountAssignments holds discovered account assignments
+	AccountAssignments []AccountAssignment `yaml:"-" json:"-"`
 
 	identityStoreClient *identitystore.Client `yaml:"-" json:"-"`
 	ssoAdminClient      *ssoadmin.Client      `yaml:"-" json:"-"`
+
+	// Caching (v1.2.0)
+	assignmentCache    map[string][]AccountAssignment `yaml:"-" json:"-"`
+	permissionSetCache map[string]PermissionSet       `yaml:"-" json:"-"`
 }
 
 // AccountConfig defines the configuration for an AWS account
@@ -69,6 +83,22 @@ type DiscoveredAccount struct {
 	ExecutionRoleArn string            `json:"executionRoleArn"`
 	Classification   string            `json:"classification"`
 	Tags             map[string]string `json:"tags,omitempty"`
+}
+
+// PermissionSet represents an Identity Center permission set (v1.2.0)
+type PermissionSet struct {
+	ARN         string `json:"arn"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CreatedDate string `json:"createdDate"`
+}
+
+// AccountAssignment represents an account assignment in Identity Center (v1.2.0)
+type AccountAssignment struct {
+	AccountID        string `json:"accountId"`
+	PermissionSetARN string `json:"permissionSetArn"`
+	PrincipalType    string `json:"principalType"` // USER or GROUP
+	PrincipalID      string `json:"principalId"`
 }
 
 // DeepCopyInto copies the receiver into out
@@ -170,14 +200,26 @@ func (c *IdentityCenterClient) Init(ctx context.Context) error {
 	c.identityStoreClient = identitystore.NewFromConfig(awscfg)
 	c.ssoAdminClient = ssoadmin.NewFromConfig(awscfg)
 
-	// Auto-discover Identity Store ID if not provided
-	if c.IdentityStoreID == "" {
-		storeID, err := c.discoverIdentityStoreID(ctx)
+	// Initialize caches
+	if c.CacheAssignments {
+		c.assignmentCache = make(map[string][]AccountAssignment)
+		c.permissionSetCache = make(map[string]PermissionSet)
+	}
+
+	// Auto-discover Identity Store ID and Instance ARN if not provided
+	if c.IdentityStoreID == "" || c.InstanceARN == "" {
+		storeID, instanceARN, err := c.discoverInstanceInfo(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to discover identity store ID: %w", err)
+			return fmt.Errorf("failed to discover instance info: %w", err)
 		}
-		c.IdentityStoreID = storeID
-		l.Infof("discovered identity store ID: %s", c.IdentityStoreID)
+		if c.IdentityStoreID == "" {
+			c.IdentityStoreID = storeID
+			l.Infof("discovered identity store ID: %s", c.IdentityStoreID)
+		}
+		if c.InstanceARN == "" {
+			c.InstanceARN = instanceARN
+			l.Infof("discovered instance ARN: %s", c.InstanceARN)
+		}
 	}
 
 	// Resolve group ID from group name if needed
@@ -194,16 +236,18 @@ func (c *IdentityCenterClient) Init(ctx context.Context) error {
 	return nil
 }
 
-// discoverIdentityStoreID auto-discovers the Identity Store ID from SSO instances
-func (c *IdentityCenterClient) discoverIdentityStoreID(ctx context.Context) (string, error) {
+// discoverInstanceInfo auto-discovers the Identity Store ID and Instance ARN from SSO instances
+func (c *IdentityCenterClient) discoverInstanceInfo(ctx context.Context) (string, string, error) {
 	resp, err := c.ssoAdminClient.ListInstances(ctx, &ssoadmin.ListInstancesInput{})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if len(resp.Instances) == 0 {
-		return "", errors.New("no SSO instances found")
+		return "", "", errors.New("no SSO instances found")
 	}
-	return aws.ToString(resp.Instances[0].IdentityStoreId), nil
+
+	instance := resp.Instances[0]
+	return aws.ToString(instance.IdentityStoreId), aws.ToString(instance.InstanceArn), nil
 }
 
 // resolveGroupID resolves a group name to its ID
@@ -292,6 +336,26 @@ func (c *IdentityCenterClient) ListSecrets(ctx context.Context, path string) ([]
 	var names []string
 	for _, account := range c.DiscoveredAccounts {
 		names = append(names, account.AccountName)
+	}
+
+	// Discover permission sets if enabled
+	if c.DiscoverPermissionSets {
+		permissionSets, err := c.listPermissionSets(ctx)
+		if err != nil {
+			l.Warnf("failed to discover permission sets: %v", err)
+		} else {
+			c.PermissionSets = permissionSets
+			l.Infof("discovered %d permission sets", len(permissionSets))
+		}
+
+		// Discover account assignments
+		assignments, err := c.listAccountAssignments(ctx)
+		if err != nil {
+			l.Warnf("failed to discover account assignments: %v", err)
+		} else {
+			c.AccountAssignments = assignments
+			l.Infof("discovered %d account assignments", len(assignments))
+		}
 	}
 
 	return names, nil
@@ -436,4 +500,148 @@ func (c *IdentityCenterClient) SetDefaults(cfg any) error {
 	}
 
 	return nil
+}
+
+// listPermissionSets discovers all permission sets in the Identity Center instance (v1.2.0)
+func (c *IdentityCenterClient) listPermissionSets(ctx context.Context) ([]PermissionSet, error) {
+	var permissionSets []PermissionSet
+
+	// List permission set ARNs
+	paginator := ssoadmin.NewListPermissionSetsPaginator(c.ssoAdminClient, &ssoadmin.ListPermissionSetsInput{
+		InstanceArn: aws.String(c.InstanceARN),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list permission sets: %w", err)
+		}
+
+		// Get details for each permission set
+		for _, psArn := range page.PermissionSets {
+			// Check cache first
+			if c.CacheAssignments {
+				if cached, exists := c.permissionSetCache[psArn]; exists {
+					permissionSets = append(permissionSets, cached)
+					continue
+				}
+			}
+
+			// Fetch from API
+			resp, err := c.ssoAdminClient.DescribePermissionSet(ctx, &ssoadmin.DescribePermissionSetInput{
+				InstanceArn:      aws.String(c.InstanceARN),
+				PermissionSetArn: aws.String(psArn),
+			})
+			if err != nil {
+				log.Warnf("failed to describe permission set %s: %v", psArn, err)
+				continue
+			}
+
+			ps := PermissionSet{
+				ARN:         psArn,
+				Name:        aws.ToString(resp.PermissionSet.Name),
+				Description: aws.ToString(resp.PermissionSet.Description),
+				CreatedDate: resp.PermissionSet.CreatedDate.String(),
+			}
+
+			// Cache the result
+			if c.CacheAssignments {
+				c.permissionSetCache[psArn] = ps
+			}
+
+			permissionSets = append(permissionSets, ps)
+		}
+	}
+
+	return permissionSets, nil
+}
+
+// listAccountAssignments discovers all account assignments for permission sets (v1.2.0)
+func (c *IdentityCenterClient) listAccountAssignments(ctx context.Context) ([]AccountAssignment, error) {
+	var assignments []AccountAssignment
+
+	// Get all permission set ARNs first
+	psResp, err := c.ssoAdminClient.ListPermissionSets(ctx, &ssoadmin.ListPermissionSetsInput{
+		InstanceArn: aws.String(c.InstanceARN),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list permission sets for assignments: %w", err)
+	}
+
+	// For each permission set, list its account assignments
+	for _, psArn := range psResp.PermissionSets {
+		// Check cache first
+		cacheKey := fmt.Sprintf("assignments:%s", psArn)
+		if c.CacheAssignments {
+			if cached, exists := c.assignmentCache[cacheKey]; exists {
+				assignments = append(assignments, cached...)
+				continue
+			}
+		}
+
+		// Fetch from API
+		psAssignments, err := c.listAccountAssignmentsForPermissionSet(ctx, psArn)
+		if err != nil {
+			log.Warnf("failed to list assignments for permission set %s: %v", psArn, err)
+			continue
+		}
+
+		// Cache the result
+		if c.CacheAssignments {
+			c.assignmentCache[cacheKey] = psAssignments
+		}
+
+		assignments = append(assignments, psAssignments...)
+	}
+
+	return assignments, nil
+}
+
+// listAccountAssignmentsForPermissionSet lists assignments for a specific permission set
+func (c *IdentityCenterClient) listAccountAssignmentsForPermissionSet(ctx context.Context, permissionSetArn string) ([]AccountAssignment, error) {
+	var assignments []AccountAssignment
+
+	paginator := ssoadmin.NewListAccountAssignmentsPaginator(c.ssoAdminClient, &ssoadmin.ListAccountAssignmentsInput{
+		InstanceArn:      aws.String(c.InstanceARN),
+		PermissionSetArn: aws.String(permissionSetArn),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, assignment := range page.AccountAssignments {
+			assignments = append(assignments, AccountAssignment{
+				AccountID:        aws.ToString(assignment.AccountId),
+				PermissionSetARN: permissionSetArn,
+				PrincipalType:    string(assignment.PrincipalType),
+				PrincipalID:      aws.ToString(assignment.PrincipalId),
+			})
+		}
+	}
+
+	return assignments, nil
+}
+
+// GetPermissionSetByName finds a permission set by name (v1.2.0)
+func (c *IdentityCenterClient) GetPermissionSetByName(name string) *PermissionSet {
+	for _, ps := range c.PermissionSets {
+		if ps.Name == name {
+			return &ps
+		}
+	}
+	return nil
+}
+
+// GetAccountAssignmentsForAccount returns all assignments for a specific account (v1.2.0)
+func (c *IdentityCenterClient) GetAccountAssignmentsForAccount(accountID string) []AccountAssignment {
+	var assignments []AccountAssignment
+	for _, assignment := range c.AccountAssignments {
+		if assignment.AccountID == accountID {
+			assignments = append(assignments, assignment)
+		}
+	}
+	return assignments
 }

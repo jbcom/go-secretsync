@@ -24,7 +24,7 @@ type VaultConfig struct {
 	Address   string          `mapstructure:"address" yaml:"address"`
 	Namespace string          `mapstructure:"namespace" yaml:"namespace"`
 	Auth      VaultAuthConfig `mapstructure:"auth" yaml:"auth"`
-	
+
 	// Traversal configuration for recursive secret listing
 	// These settings control memory usage and performance during large Vault traversals
 	MaxTraversalDepth        int `mapstructure:"max_traversal_depth" yaml:"max_traversal_depth,omitempty"`
@@ -145,7 +145,7 @@ type VaultSource struct {
 	Namespace string   `mapstructure:"namespace" yaml:"namespace"`
 	Mount     string   `mapstructure:"mount" yaml:"mount"`
 	Paths     []string `mapstructure:"paths" yaml:"paths"`
-	
+
 	// Traversal configuration for recursive secret listing
 	// These settings control memory usage and performance during large Vault traversals
 	MaxTraversalDepth        int `mapstructure:"max_traversal_depth" yaml:"max_traversal_depth,omitempty"`
@@ -177,6 +177,15 @@ type MergeStoreS3 struct {
 	Bucket   string `mapstructure:"bucket" yaml:"bucket"`
 	Prefix   string `mapstructure:"prefix" yaml:"prefix"`
 	KMSKeyID string `mapstructure:"kms_key_id" yaml:"kms_key_id"`
+
+	// Version management (v1.2.0 - Requirement 24)
+	Versioning *VersioningConfig `mapstructure:"versioning" yaml:"versioning"`
+}
+
+// VersioningConfig configures secret versioning (v1.2.0 - Requirement 24)
+type VersioningConfig struct {
+	Enabled        bool `mapstructure:"enabled" yaml:"enabled"`
+	RetainVersions int  `mapstructure:"retain_versions" yaml:"retain_versions"`
 }
 
 // Target defines a sync destination.
@@ -243,6 +252,20 @@ type OrganizationsDiscovery struct {
 	Tags         map[string][]string `mapstructure:"tags" yaml:"tags"`
 	Recursive    bool                `mapstructure:"recursive" yaml:"recursive"`
 	NameMatching *NameMatchingConfig `mapstructure:"name_matching" yaml:"name_matching"`
+
+	// Enhanced filtering (v1.2.0)
+	OUs              []string    `mapstructure:"ous" yaml:"ous"` // Multiple OUs support
+	TagFilters       []TagFilter `mapstructure:"tag_filters" yaml:"tag_filters"`
+	TagCombination   string      `mapstructure:"tag_combination" yaml:"tag_combination"`       // "AND" or "OR", default "AND"
+	ExcludeStatuses  []string    `mapstructure:"exclude_statuses" yaml:"exclude_statuses"`     // e.g., ["SUSPENDED", "CLOSED"]
+	CacheOUStructure bool        `mapstructure:"cache_ou_structure" yaml:"cache_ou_structure"` // Cache OU hierarchy
+}
+
+// TagFilter represents a single tag filtering condition with wildcard support
+type TagFilter struct {
+	Key      string   `mapstructure:"key" yaml:"key"`
+	Values   []string `mapstructure:"values" yaml:"values"`
+	Operator string   `mapstructure:"operator" yaml:"operator"` // "equals", "contains", "wildcard", default "equals"
 }
 
 // NameMatchingConfig configures fuzzy account name matching

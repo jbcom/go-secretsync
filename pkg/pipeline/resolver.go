@@ -420,11 +420,11 @@ func AutoResolveConfig(ctx context.Context, cfg *Config, awsCtx *AWSExecutionCon
 			resolved := resolver.Resolve(imp)
 			if resolved.Type == ResourceTypeAWSAccount && resolved.MatchConfidence != MatchNone {
 				l.WithFields(log.Fields{
-					"target":       targetName,
-					"import":       imp,
-					"resolvedTo":   resolved.ResolvedName,
-					"accountId":    resolved.AccountID,
-					"confidence":   resolved.MatchConfidence,
+					"target":     targetName,
+					"import":     imp,
+					"resolvedTo": resolved.ResolvedName,
+					"accountId":  resolved.AccountID,
+					"confidence": resolved.MatchConfidence,
 				}).Info("Auto-resolved import to AWS account")
 
 				// Update the import to use the resolved name

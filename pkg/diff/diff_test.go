@@ -93,22 +93,22 @@ func TestDiffSecrets_ModifiedSecret(t *testing.T) {
 func TestDiffSecrets_KeyLevelChanges(t *testing.T) {
 	current := map[string]interface{}{
 		"config": map[string]interface{}{
-			"existing_key":  "value1",
-			"removed_key":   "value2",
-			"modified_key":  "old_value",
+			"existing_key": "value1",
+			"removed_key":  "value2",
+			"modified_key": "old_value",
 		},
 	}
 	desired := map[string]interface{}{
 		"config": map[string]interface{}{
-			"existing_key":  "value1",     // unchanged
-			"added_key":     "new_value",  // added
-			"modified_key":  "new_value",  // modified
+			"existing_key": "value1",    // unchanged
+			"added_key":    "new_value", // added
+			"modified_key": "new_value", // modified
 			// removed_key is gone
 		},
 	}
 
 	changes := DiffSecrets(current, desired)
-	
+
 	if len(changes) != 1 {
 		t.Fatalf("expected 1 change, got %d", len(changes))
 	}
@@ -138,10 +138,10 @@ func TestDiffSecrets_ComplexScenario(t *testing.T) {
 		"legacy/config":     map[string]interface{}{"OLD": "value"},
 	}
 	desired := map[string]interface{}{
-		"api-keys/stripe":   map[string]interface{}{"KEY": "sk_xxx"},           // unchanged
-		"api-keys/datadog":  map[string]interface{}{"API_KEY": "dd_yyy"},       // modified
+		"api-keys/stripe":   map[string]interface{}{"KEY": "sk_xxx"},                         // unchanged
+		"api-keys/datadog":  map[string]interface{}{"API_KEY": "dd_yyy"},                     // modified
 		"database/postgres": map[string]interface{}{"HOST": "new.db.com", "PASSWORD": "new"}, // modified
-		"api-keys/newrelic": map[string]interface{}{"KEY": "nr_xxx"},           // added
+		"api-keys/newrelic": map[string]interface{}{"KEY": "nr_xxx"},                         // added
 		// legacy/config removed
 	}
 

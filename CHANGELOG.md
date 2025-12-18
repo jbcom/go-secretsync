@@ -7,7 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [1.2.0] - 2025-12-09
+
+### Added - v1.2.0 Advanced Features
+- **AWS Organizations Discovery Enhancement**
+  - Multiple tag filters with wildcard support (`*`, `?`) and contains matching
+  - Configurable AND/OR logic for tag combinations
+  - Multiple organizational unit (OU) filtering with nested traversal
+  - Account status filtering (exclude SUSPENDED/CLOSED accounts)
+  - In-memory caching with TTL for discovered accounts (1 hour default)
+- **AWS Identity Center Integration**
+  - Permission set discovery with ARN to name mapping
+  - Account assignment mapping with principal tracking
+  - Cross-region support with automatic instance ARN discovery
+  - Caching for assignments (30 minute TTL)
+- **Secret Versioning System**
+  - Version tracking in diff engine with metadata storage
+  - S3-based version storage with retention policies
+  - Version rollback capability via CLI `--version` flag
+  - Version transitions displayed in diff output (v1 → v2)
+- **Enhanced Diff Output**
+  - Side-by-side comparison format with aligned columns
+  - Intelligent value masking for sensitive patterns (API keys, passwords, tokens)
+  - Multiple output formats: human, JSON, GitHub Actions, compact
+  - Summary statistics with added/modified/deleted counts and timing
+
+### Added - v1.1.0 Observability & Reliability
+- **Prometheus Metrics Integration**
+  - `/metrics` endpoint with comprehensive metrics for Vault, AWS, Pipeline, S3
+  - `/health` endpoint for health checks
+  - CLI flags: `--metrics-port` and `--metrics-addr`
+  - Automatic metrics server startup when port configured
+- **Circuit Breaker Pattern**
+  - Independent circuit breakers for Vault and AWS clients
+  - Configurable failure thresholds and recovery timeouts
+  - State transition logging with observability integration
+- **Enhanced Error Context**
+  - Request ID tracking throughout pipeline execution
+  - Duration tracking for all operations
+  - Structured error messages with contextual information
+- **Queue Compaction Configuration**
+  - Configurable thresholds with adaptive defaults
+  - Formula: `min(1000, maxSecretsPerMount/100)`
+  - YAML configuration support
+- **Race Condition Prevention**
+  - Proper mutex protection for concurrent map access
+  - All tests pass with `-race` detector
+- **Docker Image Version Pinning**
+  - All test images pinned to specific versions for reproducible builds
+
+### Added - v1.0 Core Features
 - **SecretSync 1.0 Release** - Complete rebranding and architecture overhaul
 - Recursive Vault KV2 listing with BFS traversal
 - Target inheritance with circular dependency detection
@@ -18,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TTL-based caching for AWS ListSecrets
 - Enhanced path validation (directory traversal, null byte injection protection)
 - LogicalClient interface for testability
-- Comprehensive test suite (113+ test functions)
+- Comprehensive test suite (150+ test functions)
 
 ### Changed
 - **PROJECT RENAME**: vault-secret-sync → SecretSync
@@ -42,11 +91,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Path traversal attack prevention
 - Type-safe Vault API response parsing
 - Safe type assertions throughout codebase
+- Intelligent value masking in diff output to prevent credential exposure
 
 ### Fixed
 - Cache invalidation after WriteSecret and DeleteSecret operations
 - Structured logging consistency
 - Error context in vault traversal with depth and count info
+- Critical lint errors (copylocks, staticcheck QF1003)
+- Integration test coverage in CI/CD pipeline
 
 ---
 

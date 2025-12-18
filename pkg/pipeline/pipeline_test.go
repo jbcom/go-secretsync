@@ -234,19 +234,19 @@ func TestNewWithContext(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 			pipeline, err := NewWithContext(ctx, tt.config)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
 			}
-			
+
 			// Note: May fail if AWS credentials are not available
 			// This is expected behavior in unit tests
 			if err != nil {
 				t.Logf("Expected error without AWS credentials: %v", err)
 				return
 			}
-			
+
 			assert.NoError(t, err)
 			assert.NotNil(t, pipeline)
 			assert.NotNil(t, pipeline.config)
@@ -373,7 +373,7 @@ func TestPipeline_ConcurrentExecution(t *testing.T) {
 
 	pipeline, err := New(config)
 	require.NoError(t, err)
-	
+
 	// Validate that pipeline can handle multiple targets
 	assert.Len(t, pipeline.config.Targets, 2)
 }
@@ -515,7 +515,7 @@ func TestPipeline_MergeStoreConfiguration(t *testing.T) {
 func TestS3Config(t *testing.T) {
 	// Alias for S3Config from config.go
 	type S3Config = MergeStoreS3
-	
+
 	config := &S3Config{
 		Bucket:   "test-bucket",
 		Prefix:   "merge/",
@@ -527,4 +527,3 @@ func TestS3Config(t *testing.T) {
 	assert.Equal(t, "merge/", config.Prefix)
 	assert.Equal(t, "key-123", config.KMSKeyID)
 }
-

@@ -8,12 +8,30 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	log "github.com/sirupsen/logrus"
 )
+
+// SecretVersion represents a versioned secret with metadata (v1.2.0 - Requirement 24)
+type SecretVersion struct {
+	Path      string                 `json:"path"`
+	Version   int                    `json:"version"`
+	Data      map[string]interface{} `json:"data"`
+	Timestamp time.Time              `json:"timestamp"`
+	Hash      string                 `json:"hash,omitempty"`
+}
+
+// VersionStore interface for version management (v1.2.0 - Requirement 24)
+type VersionStore interface {
+	GetVersion(ctx context.Context, path string, version int) (*SecretVersion, error)
+	ListVersions(ctx context.Context, path string) ([]SecretVersion, error)
+	GetLatest(ctx context.Context, path string) (*SecretVersion, error)
+	StoreVersion(ctx context.Context, secret *SecretVersion) error
+}
 
 // S3MergeStore implements a merge store using S3 for intermediate secret storage.
 // This is useful when you want to use S3 as a central repository for merged secrets
@@ -23,6 +41,10 @@ type S3MergeStore struct {
 	Prefix   string
 	KMSKeyID string
 	Region   string
+
+	// Version management (v1.2.0 - Requirement 24)
+	VersioningEnabled bool
+	RetainVersions    int
 
 	client *s3.Client
 }
@@ -47,6 +69,19 @@ func NewS3MergeStore(ctx context.Context, cfg *MergeStoreS3, region string) (*S3
 		KMSKeyID: cfg.KMSKeyID,
 		Region:   region,
 		client:   s3.NewFromConfig(awsCfg),
+	}
+
+	// Configure versioning if enabled (v1.2.0 - Requirement 24)
+	if cfg.Versioning != nil {
+		store.VersioningEnabled = cfg.Versioning.Enabled
+		store.RetainVersions = cfg.Versioning.RetainVersions
+		if store.RetainVersions <= 0 {
+			store.RetainVersions = 10 // Default retention
+		}
+		l.WithFields(log.Fields{
+			"versioning_enabled": store.VersioningEnabled,
+			"retain_versions":    store.RetainVersions,
+		}).Debug("Versioning configured")
 	}
 
 	return store, nil
@@ -123,7 +158,7 @@ func (s *S3MergeStore) ReadSecret(ctx context.Context, targetName, secretName st
 	if err != nil {
 		return nil, fmt.Errorf("failed to get object: %w", err)
 	}
-	defer output.Body.Close()
+	defer func() { _ = output.Body.Close() }()
 
 	body, err := io.ReadAll(output.Body)
 	if err != nil {
@@ -292,7 +327,7 @@ func (s *S3MergeStore) ReadMergedBundle(ctx context.Context, targetName, bundleI
 	if err != nil {
 		return nil, fmt.Errorf("failed to get object: %w", err)
 	}
-	defer output.Body.Close()
+	defer func() { _ = output.Body.Close() }()
 
 	body, err := io.ReadAll(output.Body)
 	if err != nil {
@@ -334,6 +369,274 @@ func (s *S3MergeStore) DeleteBundle(ctx context.Context, targetName, bundleID st
 	})
 	if err != nil {
 		return fmt.Errorf("failed to delete object: %w", err)
+	}
+
+	return nil
+}
+
+// Version management methods (v1.2.0 - Requirement 24)
+
+// versionKeyPath returns the S3 key for a specific version of a secret
+func (s *S3MergeStore) versionKeyPath(targetName, secretName string, version int) string {
+	prefix := s.Prefix
+	if prefix != "" && !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	return fmt.Sprintf("%sversions/%s/%s/v%d.json", prefix, targetName, secretName, version)
+}
+
+// versionMetadataKeyPath returns the S3 key for version metadata
+func (s *S3MergeStore) versionMetadataKeyPath(targetName, secretName string) string {
+	prefix := s.Prefix
+	if prefix != "" && !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	return fmt.Sprintf("%sversions/%s/%s/metadata.json", prefix, targetName, secretName)
+}
+
+// GetVersion retrieves a specific version of a secret
+func (s *S3MergeStore) GetVersion(ctx context.Context, path string, version int) (*SecretVersion, error) {
+	if !s.VersioningEnabled {
+		return nil, fmt.Errorf("versioning not enabled")
+	}
+
+	// Parse target and secret name from path
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid path format: %s", path)
+	}
+	targetName, secretName := parts[0], parts[1]
+
+	l := log.WithFields(log.Fields{
+		"action":     "S3MergeStore.GetVersion",
+		"bucket":     s.Bucket,
+		"target":     targetName,
+		"secretName": secretName,
+		"version":    version,
+	})
+	l.Debug("Getting specific version from S3")
+
+	key := s.versionKeyPath(targetName, secretName, version)
+
+	output, err := s.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get version %d: %w", version, err)
+	}
+	defer func() { _ = output.Body.Close() }()
+
+	body, err := io.ReadAll(output.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read version body: %w", err)
+	}
+
+	var secretVersion SecretVersion
+	if err := json.Unmarshal(body, &secretVersion); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal version: %w", err)
+	}
+
+	return &secretVersion, nil
+}
+
+// ListVersions lists all versions of a secret
+func (s *S3MergeStore) ListVersions(ctx context.Context, path string) ([]SecretVersion, error) {
+	if !s.VersioningEnabled {
+		return nil, fmt.Errorf("versioning not enabled")
+	}
+
+	// Parse target and secret name from path
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid path format: %s", path)
+	}
+	targetName, secretName := parts[0], parts[1]
+
+	l := log.WithFields(log.Fields{
+		"action":     "S3MergeStore.ListVersions",
+		"bucket":     s.Bucket,
+		"target":     targetName,
+		"secretName": secretName,
+	})
+	l.Debug("Listing versions from S3")
+
+	prefix := s.Prefix
+	if prefix != "" && !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	versionPrefix := fmt.Sprintf("%sversions/%s/%s/", prefix, targetName, secretName)
+
+	var versions []SecretVersion
+	paginator := s3.NewListObjectsV2Paginator(s.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.Bucket),
+		Prefix: aws.String(versionPrefix),
+	})
+
+	for paginator.HasMorePages() {
+		output, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list version objects: %w", err)
+		}
+
+		for _, obj := range output.Contents {
+			key := aws.ToString(obj.Key)
+			// Skip metadata files
+			if strings.HasSuffix(key, "metadata.json") {
+				continue
+			}
+
+			// Get the version object
+			versionOutput, err := s.client.GetObject(ctx, &s3.GetObjectInput{
+				Bucket: aws.String(s.Bucket),
+				Key:    aws.String(key),
+			})
+			if err != nil {
+				l.WithError(err).WithField("key", key).Warn("Failed to get version object")
+				continue
+			}
+
+			body, err := io.ReadAll(versionOutput.Body)
+			_ = versionOutput.Body.Close()
+			if err != nil {
+				l.WithError(err).WithField("key", key).Warn("Failed to read version body")
+				continue
+			}
+
+			var version SecretVersion
+			if err := json.Unmarshal(body, &version); err != nil {
+				l.WithError(err).WithField("key", key).Warn("Failed to unmarshal version")
+				continue
+			}
+
+			versions = append(versions, version)
+		}
+	}
+
+	// Sort by version number (descending)
+	for i := 0; i < len(versions)-1; i++ {
+		for j := i + 1; j < len(versions); j++ {
+			if versions[i].Version < versions[j].Version {
+				versions[i], versions[j] = versions[j], versions[i]
+			}
+		}
+	}
+
+	return versions, nil
+}
+
+// GetLatest retrieves the latest version of a secret
+func (s *S3MergeStore) GetLatest(ctx context.Context, path string) (*SecretVersion, error) {
+	if !s.VersioningEnabled {
+		return nil, fmt.Errorf("versioning not enabled")
+	}
+
+	versions, err := s.ListVersions(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list versions: %w", err)
+	}
+
+	if len(versions) == 0 {
+		return nil, fmt.Errorf("no versions found for path: %s", path)
+	}
+
+	return &versions[0], nil
+}
+
+// StoreVersion stores a new version of a secret
+func (s *S3MergeStore) StoreVersion(ctx context.Context, secret *SecretVersion) error {
+	if !s.VersioningEnabled {
+		return fmt.Errorf("versioning not enabled")
+	}
+
+	// Parse target and secret name from path
+	parts := strings.SplitN(secret.Path, "/", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid path format: %s", secret.Path)
+	}
+	targetName, secretName := parts[0], parts[1]
+
+	l := log.WithFields(log.Fields{
+		"action":     "S3MergeStore.StoreVersion",
+		"bucket":     s.Bucket,
+		"target":     targetName,
+		"secretName": secretName,
+		"version":    secret.Version,
+	})
+	l.Debug("Storing version to S3")
+
+	// Set timestamp if not provided
+	if secret.Timestamp.IsZero() {
+		secret.Timestamp = time.Now().UTC()
+	}
+
+	key := s.versionKeyPath(targetName, secretName, secret.Version)
+
+	// Marshal version data to JSON
+	jsonData, err := json.Marshal(secret)
+	if err != nil {
+		return fmt.Errorf("failed to marshal version data: %w", err)
+	}
+
+	input := &s3.PutObjectInput{
+		Bucket:      aws.String(s.Bucket),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(jsonData),
+		ContentType: aws.String("application/json"),
+	}
+
+	// Use KMS encryption if configured
+	if s.KMSKeyID != "" {
+		input.ServerSideEncryption = "aws:kms"
+		input.SSEKMSKeyId = aws.String(s.KMSKeyID)
+	} else {
+		input.ServerSideEncryption = "AES256"
+	}
+
+	_, err = s.client.PutObject(ctx, input)
+	if err != nil {
+		l.WithError(err).Error("Failed to store version to S3")
+		return fmt.Errorf("failed to put version object: %w", err)
+	}
+
+	// Clean up old versions if retention limit is set
+	if s.RetainVersions > 0 {
+		if err := s.cleanupOldVersions(ctx, targetName, secretName); err != nil {
+			l.WithError(err).Warn("Failed to cleanup old versions")
+		}
+	}
+
+	l.Debug("Successfully stored version to S3")
+	return nil
+}
+
+// cleanupOldVersions removes versions beyond the retention limit
+func (s *S3MergeStore) cleanupOldVersions(ctx context.Context, targetName, secretName string) error {
+	path := fmt.Sprintf("%s/%s", targetName, secretName)
+	versions, err := s.ListVersions(ctx, path)
+	if err != nil {
+		return fmt.Errorf("failed to list versions for cleanup: %w", err)
+	}
+
+	if len(versions) <= s.RetainVersions {
+		return nil // Nothing to clean up
+	}
+
+	// Delete versions beyond retention limit
+	versionsToDelete := versions[s.RetainVersions:]
+	for _, version := range versionsToDelete {
+		key := s.versionKeyPath(targetName, secretName, version.Version)
+		_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(s.Bucket),
+			Key:    aws.String(key),
+		})
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"target":     targetName,
+				"secretName": secretName,
+				"version":    version.Version,
+			}).Warn("Failed to delete old version")
+		}
 	}
 
 	return nil

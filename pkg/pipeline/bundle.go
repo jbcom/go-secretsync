@@ -12,10 +12,10 @@ import (
 func BundleID(sources []string) string {
 	// Join sources with a delimiter that won't appear in paths
 	joined := strings.Join(sources, "\x00")
-	
+
 	// SHA256 hash for deterministic output
 	hash := sha256.Sum256([]byte(joined))
-	
+
 	// Use first 16 bytes (32 hex chars) for reasonable uniqueness without being too long
 	return hex.EncodeToString(hash[:16])
 }
@@ -39,10 +39,10 @@ func TargetBundlePath(mount, targetName string, sources []string) string {
 type MergeRequest struct {
 	// Sources in priority order (later sources override earlier on conflict)
 	Sources []string
-	
+
 	// Target name (for organizational purposes)
 	Target string
-	
+
 	// DryRun if true, don't actually write
 	DryRun bool
 }
@@ -51,10 +51,10 @@ type MergeRequest struct {
 type SyncRequest struct {
 	// BundlePath is the merge store path containing the merged secrets
 	BundlePath string
-	
+
 	// Targets to sync to (account IDs or target names)
 	Targets []string
-	
+
 	// DryRun if true, don't actually write
 	DryRun bool
 }
@@ -63,10 +63,10 @@ type SyncRequest struct {
 type PipelineRequest struct {
 	// Sources in priority order for merge
 	Sources []string
-	
+
 	// Targets to sync the merged bundle to
 	Targets []string
-	
+
 	// DryRun if true, don't actually write
 	DryRun bool
 }

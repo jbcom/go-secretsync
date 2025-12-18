@@ -168,3 +168,149 @@ func filterAccountsByTags(accounts []AccountInfo, requiredTags map[string][]stri
 	}
 	return result
 }
+
+// filterAccountsByTagFilters filters accounts using enhanced tag filtering with wildcards and AND/OR logic
+func filterAccountsByTagFilters(accounts []AccountInfo, tagFilters []TagFilter, combination string) []AccountInfo {
+	if len(tagFilters) == 0 {
+		return accounts
+	}
+
+	var result []AccountInfo
+	for _, account := range accounts {
+		if matchesTagFilters(account, tagFilters, combination) {
+			result = append(result, account)
+		}
+	}
+	return result
+}
+
+// matchesTagFilters checks if an account matches the tag filter conditions
+func matchesTagFilters(account AccountInfo, tagFilters []TagFilter, combination string) bool {
+	if len(tagFilters) == 0 {
+		return true
+	}
+
+	// Default to AND logic if not specified
+	useAndLogic := combination != "OR"
+
+	for _, filter := range tagFilters {
+		matches := matchesTagFilter(account, filter)
+
+		if useAndLogic {
+			// AND logic: all filters must match
+			if !matches {
+				return false
+			}
+		} else {
+			// OR logic: any filter can match
+			if matches {
+				return true
+			}
+		}
+	}
+
+	// For AND logic, we reach here only if all matched
+	// For OR logic, we reach here only if none matched
+	return useAndLogic
+}
+
+// matchesTagFilter checks if an account matches a single tag filter
+func matchesTagFilter(account AccountInfo, filter TagFilter) bool {
+	if account.Tags == nil {
+		return false
+	}
+
+	accountValue, hasTag := account.Tags[filter.Key]
+	if !hasTag {
+		return false
+	}
+
+	// Check if account value matches any of the filter values
+	for _, filterValue := range filter.Values {
+		if matchesTagValue(accountValue, filterValue, filter.Operator) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// matchesTagValue checks if an account tag value matches a filter value using the specified operator
+func matchesTagValue(accountValue, filterValue, operator string) bool {
+	switch operator {
+	case "contains":
+		return strings.Contains(strings.ToLower(accountValue), strings.ToLower(filterValue))
+	case "wildcard":
+		return matchesWildcard(accountValue, filterValue)
+	default: // "equals" or empty
+		return strings.EqualFold(accountValue, filterValue)
+	}
+}
+
+// matchesWildcard performs wildcard matching (* and ? patterns)
+func matchesWildcard(text, pattern string) bool {
+	// Convert to lowercase for case-insensitive matching
+	text = strings.ToLower(text)
+	pattern = strings.ToLower(pattern)
+
+	// Simple wildcard implementation
+	// * matches any sequence of characters
+	// ? matches any single character
+	return wildcardMatch(text, pattern)
+}
+
+// wildcardMatch implements wildcard pattern matching
+func wildcardMatch(text, pattern string) bool {
+	// Handle empty pattern
+	if pattern == "" {
+		return text == ""
+	}
+
+	// Handle * at the beginning
+	if pattern[0] == '*' {
+		if len(pattern) == 1 {
+			return true // * matches everything
+		}
+		// Try matching the rest of the pattern at each position
+		for i := 0; i <= len(text); i++ {
+			if wildcardMatch(text[i:], pattern[1:]) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Handle empty text
+	if text == "" {
+		return pattern == ""
+	}
+
+	// Handle ? or exact character match
+	if pattern[0] == '?' || pattern[0] == text[0] {
+		return wildcardMatch(text[1:], pattern[1:])
+	}
+
+	return false
+}
+
+// filterAccountsByStatus filters out accounts with excluded statuses
+func filterAccountsByStatus(accounts []AccountInfo, excludeStatuses []string) []AccountInfo {
+	if len(excludeStatuses) == 0 {
+		return accounts
+	}
+
+	var result []AccountInfo
+	for _, account := range accounts {
+		excluded := false
+		for _, status := range excludeStatuses {
+			if strings.EqualFold(account.Status, status) {
+				excluded = true
+				break
+			}
+		}
+		if !excluded {
+			result = append(result, account)
+		}
+	}
+	return result
+}

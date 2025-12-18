@@ -4,7 +4,16 @@
 
 SecretSync is a production-ready Go application that synchronizes secrets from HashiCorp Vault to AWS Secrets Manager and other external secret stores. It uses a two-phase pipeline architecture (merge + sync) with S3-based configuration inheritance, enabling enterprise-scale secret management across multi-account AWS environments.
 
-**Current State:** v1.0 core complete, working toward v1.1.0 (observability) and v1.2.0 (advanced features)
+**Current State:**
+- ✅ v1.0: COMPLETE (113+ tests passing)
+- ⚠️ v1.1.0: PARTIAL (2 lint errors, most features done)
+- ⏳ v1.2.0: PLANNED (some features complete, others pending)
+
+**Target Users:**
+- DevOps Engineers managing multi-account AWS environments
+- Platform Engineers building secret management infrastructure
+- Security Teams enforcing secret rotation policies
+- Organizations migrating from Vault to AWS Secrets Manager
 
 ## System Architecture
 
@@ -65,6 +74,44 @@ func (vc *VaultClient) ListSecretsRecursive(ctx context.Context, path string) ([
 - Path traversal prevention (`..`, null bytes)
 - Type-safe response parsing
 - No credentials in logs
+
+**Queue Compaction (v1.1.0 - Requirement 19):**
+
+**Status:** ❓ Needs verification
+
+**Purpose:** Optimize memory usage during BFS traversal of large secret hierarchies
+
+**Configuration:**
+```yaml
+vault_sources:
+  - mount: secret/base/
+    max_secrets: 10000
+    queue_compaction_threshold: 500  # Compact when queue exceeds this
+```
+
+**Behavior:**
+- Default threshold: `min(1000, maxSecretsPerMount/100)`
+- Compaction triggers when: `queue_index > threshold AND queue_index > len(queue)/2`
+- Compaction removes processed items from queue
+- Logs compaction events with old/new queue sizes
+
+**Implementation:**
+```go
+type VaultClient struct {
+    // ... existing fields
+    queueCompactionThreshold int
+}
+
+func (vc *VaultClient) compactQueue(queue []string, index int) []string {
+    if index > vc.queueCompactionThreshold && index > len(queue)/2 {
+        log.Infof("compacting queue: old_size=%d new_size=%d", len(queue), len(queue)-index)
+        return queue[index:]
+    }
+    return queue
+}
+```
+
+**Action Required:** Verify config field exists and is used in BFS traversal
 
 #### 2. AWS Client (`pkg/client/aws/`)
 
@@ -194,21 +241,103 @@ s3://bucket/prefix/
 
 **Purpose:** Automatically discover AWS resources
 
-**Current:**
-- AWS Organizations account discovery
-- Tag-based filtering
-- Organizational Unit filtering
+**Current Implementation:**
+- AWS Organizations account discovery (basic)
+- Tag-based filtering (basic)
+- Organizational Unit filtering (basic)
 
-**Planned (v1.2.0):**
-- AWS Identity Center integration
-- Permission set mapping
-- Dynamic target generation
+**Planned Enhancements (v1.2.0 - Requirement 22):**
+- Multiple tag filters with wildcards
+- Tag combination logic (AND/OR)
+- Nested OU traversal
+- Account status filtering (exclude suspended/closed)
+- Discovery caching with TTL (1 hour)
 
-#### 7. Diff Engine (`pkg/diff/`)
+**AWS Identity Center Integration (v1.2.0 - Requirement 23):**
+- Permission set discovery
+- Account assignment mapping
+- Cross-region support
+- Assignment caching (TTL: 30 min)
+
+**Implementation:**
+```go
+type DiscoveryService struct {
+    orgsClient    *organizations.Client
+    ssoClient     *ssoadmin.Client
+    cache         *DiscoveryCache
+    filters       []Filter
+}
+
+func (d *DiscoveryService) DiscoverAccounts(ctx context.Context) ([]Account, error)
+func (d *DiscoveryService) DiscoverPermissionSets(ctx context.Context) ([]PermissionSet, error)
+```
+
+#### 7. Secret Versioning (v1.2.0 - Requirement 24)
+
+**Purpose:** Track secret versions and enable rollback
+
+**Status:** ⏳ PLANNED
+
+**Features:**
+- Version tracking in diff engine
+- Version metadata storage in S3
+- Version rollback capability
+- Version history retention
+
+**Implementation:**
+```go
+type SecretVersion struct {
+    Path      string
+    Version   int
+    Data      map[string]interface{}
+    Timestamp time.Time
+    Author    string
+}
+
+type VersionStore interface {
+    GetVersion(ctx context.Context, path string, version int) (*SecretVersion, error)
+    ListVersions(ctx context.Context, path string) ([]SecretVersion, error)
+    GetLatest(ctx context.Context, path string) (*SecretVersion, error)
+}
+```
+
+**S3 Storage Format:**
+```
+s3://bucket/prefix/
+├── target-a/
+│   ├── secret1/
+│   │   ├── v1.json
+│   │   ├── v2.json
+│   │   └── latest.json (symlink)
+│   └── secret2/
+│       └── v1.json
+```
+
+**CLI Usage:**
+```bash
+# Sync specific version
+secretsync pipeline --config config.yaml --version 5
+
+# Show version history
+secretsync version list --path production/api/key
+
+# Rollback to previous version
+secretsync version rollback --path production/api/key --version 3
+```
+
+**Diff Output with Versions:**
+```
+production/db/password:
+  Old: v5 (2025-12-08 10:30:00)
+  New: v6 (2025-12-09 14:15:00)
+  Changed: value
+```
+
+#### 8. Diff Engine (`pkg/diff/`)
 
 **Purpose:** Compute differences between secret states
 
-**Output Formats:**
+**Current Output Formats:**
 - Text (colored terminal output)
 - JSON (structured data)
 - GitHub (PR annotations)
@@ -224,6 +353,64 @@ Changes:
   + production/api/new-key
   ~ production/db/password (value changed)
   - staging/old-token
+```
+
+**Planned Enhancements (v1.2.0 - Requirement 25):**
+
+**Side-by-Side Comparison:**
+```
+production/db/password:
+  Old: ********** (masked)
+  New: ********** (masked)
+  Changed: value
+```
+
+**Value Masking:**
+- Mask sensitive values by default
+- `--show-values` flag to reveal
+- Pattern-based masking (API keys, passwords)
+
+**GitHub Output Format:**
+```json
+{
+  "annotations": [
+    {
+      "path": "production/api/new-key",
+      "annotation_level": "notice",
+      "message": "Secret added"
+    }
+  ]
+}
+```
+
+**JSON Output Format:**
+```json
+{
+  "summary": {
+    "added": 5,
+    "modified": 3,
+    "deleted": 1
+  },
+  "changes": [
+    {
+      "path": "production/api/new-key",
+      "type": "added",
+      "old_value": null,
+      "new_value": "***"
+    }
+  ]
+}
+```
+
+**Implementation:**
+```go
+type DiffFormatter interface {
+    Format(diff *Diff) (string, error)
+}
+
+type SideBySideFormatter struct { }
+type GitHubFormatter struct { }
+type JSONFormatter struct { }
 ```
 
 ### Data Flow
@@ -316,7 +503,7 @@ discovery:
     - ou: ou-prod-xxxx
   role_arn: arn:aws:iam::123456789012:role/OrgDiscovery
 
-# Observability (v1.1.0)
+# Observability (v1.1.0 - Requirements 15, 16)
 metrics:
   enabled: true
   port: 9090
@@ -324,9 +511,10 @@ metrics:
 
 circuit_breaker:
   enabled: true
-  failure_threshold: 5
-  timeout: 30s
-  max_requests: 1
+  failure_threshold: 5      # Open after 5 failures
+  timeout: 30s              # Stay open for 30 seconds
+  max_requests: 1           # Allow 1 request in half-open state
+  window: 10s               # Count failures in 10 second window
 ```
 
 ## Deployment Models
@@ -348,6 +536,9 @@ secretsync pipeline --config config.yaml --merge-only
 
 # Sync phase only (reads from S3)
 secretsync pipeline --config config.yaml --sync-only
+
+# With metrics endpoint (v1.1.0)
+secretsync pipeline --config config.yaml --metrics-port 9090
 ```
 
 ### 2. GitHub Action
@@ -523,27 +714,74 @@ path "secret/metadata/*" {
    - Circular dependencies
    - **Action:** Log warning, continue or fail based on severity
 
-### Error Context (v1.1.0)
+### Error Context (v1.1.0 - Requirement 17)
 
-All errors include:
+**Status:** ❓ Needs verification of adoption throughout codebase
+
+**Purpose:** Provide detailed error context for debugging
+
+**Context Fields:**
 - Request ID (for correlation)
 - Operation name
 - Resource path
 - Duration
 - Retry count
 
-Example:
+**Example:**
 ```
 [req=abc123] failed to list secrets at path "secret/data/app" after 1250ms (retries: 2): permission denied
 ```
 
-### Circuit Breaker (v1.1.0)
+**Implementation:**
+```go
+type ErrorContext struct {
+    RequestID  string
+    Operation  string
+    Path       string
+    Duration   time.Duration
+    Retries    int
+}
 
-Prevents cascade failures:
+func (ec *ErrorContext) Wrap(err error) error {
+    return fmt.Errorf("[req=%s] %s at path %q after %dms (retries: %d): %w",
+        ec.RequestID, ec.Operation, ec.Path, ec.Duration.Milliseconds(), ec.Retries, err)
+}
+```
+
+**Location:** `pkg/context/error_context.go` + `pkg/context/request_context.go`
+
+**Action Required:** Verify adoption in Vault and AWS clients
+
+### Circuit Breaker (v1.1.0 - Requirement 16)
+
+**Status:** ⚠️ Implemented but has lint error (staticcheck QF1003)
+
+**Purpose:** Prevents cascade failures when external services are degraded
+
+**Behavior:**
 - Opens after 5 failures in 10 seconds
 - Fails fast when open (30 second timeout)
 - Half-open state allows test request
 - Independent circuits per service (Vault, AWS)
+
+**Implementation:**
+```go
+type CircuitBreaker struct {
+    state          State  // closed, open, half_open
+    failureCount   int
+    lastFailure    time.Time
+    timeout        time.Duration
+    threshold      int
+}
+
+func (cb *CircuitBreaker) Execute(ctx context.Context, fn func() error) error
+```
+
+**Metrics:**
+- `secretsync_circuit_breaker_state{service="vault|aws",state="closed|open|half_open"}`
+
+**Known Issue:**
+- Line 142: staticcheck QF1003 - switch statement pattern needs fixing
 
 ## Testing Strategy
 
@@ -653,30 +891,97 @@ log.WithFields(logrus.Fields{
 
 OpenTelemetry integration planned for distributed tracing
 
+## Current Status Summary
+
+### v1.0 - ✅ COMPLETE
+- All core features implemented
+- 113+ test functions passing
+- Integration test infrastructure
+- Race detector clean
+- Production-ready
+
+### v1.1.0 - ⚠️ PARTIAL (Release Blocked)
+
+**Completed Features:**
+- ✅ Prometheus metrics endpoint (PR #69, Issue #46)
+- ✅ Docker image version pinning (PR #64, Issue #40)
+- ✅ Race condition prevention (PR #68, Issue #44)
+
+**Blocked by Lint Errors:**
+- 🔴 Circuit breaker staticcheck error (PR #70, Issue #47)
+- 🔴 VaultClient copylocks error
+
+**Needs Verification:**
+- ❓ Error context adoption (PR #71, Issue #48)
+- ❓ Queue compaction config (PR #67, Issue #43)
+
+**Pending Work:**
+- ⏳ Integration tests in CI (Issue #51, #52)
+- ⏳ Documentation fixes (Issue #50)
+
+**Estimated Time to Release:** 8-10 hours
+
+### v1.2.0 - ⏳ PLANNED
+
+**Infrastructure Complete:**
+- ✅ Vault recursive listing
+- ✅ Deep merge
+- ✅ Target inheritance
+- ✅ S3 merge store
+
+**Planned Features:**
+- ⏳ AWS Organizations discovery enhancements
+- ⏳ AWS Identity Center integration
+- ⏳ Secret versioning
+- ⏳ Enhanced diff output
+
 ## Roadmap
 
-### v1.1.0 - Observability & Reliability (Current)
+### v1.1.0 - Observability & Reliability (Current - ⚠️ PARTIAL)
 
-- [x] Prometheus metrics endpoint
-- [x] Circuit breaker pattern
-- [x] Enhanced error messages with request IDs
-- [ ] Docker image version pinning
-- [ ] Configurable queue compaction
-- [ ] Race condition tests
-- [ ] CI/CD modernization
-- [ ] Documentation fixes
-- [ ] Command injection prevention
+**Status:** Most features complete, 2 critical lint errors blocking release
 
-### v1.2.0 - Advanced Features
+**Completed:**
+- [x] Prometheus metrics endpoint (Requirement 15)
+- [x] Docker image version pinning (Requirement 18)
+- [x] Race condition prevention (Requirement 20)
 
-- [x] Vault recursive listing (DONE)
-- [x] Deep merge compatibility (DONE)
-- [x] Target inheritance (DONE)
-- [x] S3 merge store (DONE)
-- [ ] AWS Organizations discovery enhancements
-- [ ] AWS Identity Center integration
-- [ ] Secret versioning support
-- [ ] Enhanced diff output with side-by-side comparison
+**In Progress:**
+- [⚠️] Circuit breaker pattern (Requirement 16) - Has staticcheck QF1003 lint error
+- [❓] Enhanced error messages with request IDs (Requirement 17) - Needs verification
+- [❓] Configurable queue compaction (Requirement 19) - Needs verification
+
+**Pending:**
+- [ ] CI/CD modernization (Requirement 21) - Integration tests not in CI
+- [ ] Fix lint errors to unblock release
+
+### v1.2.0 - Advanced Features (⏳ PLANNED)
+
+**Completed Infrastructure:**
+- [x] Vault recursive listing (Requirement 2)
+- [x] Deep merge compatibility (Requirement 9)
+- [x] Target inheritance (Requirement 11)
+- [x] S3 merge store (Requirement 8)
+
+**Planned Enhancements:**
+- [ ] AWS Organizations discovery enhancements (Requirement 22)
+  - Comprehensive tag filtering
+  - OU-based filtering
+  - Account status filtering
+  - Discovery caching
+- [ ] AWS Identity Center integration (Requirement 23)
+  - Permission set discovery
+  - Account assignment mapping
+- [ ] Secret versioning support (Requirement 24)
+  - Version tracking in diff engine
+  - Version metadata in S3
+  - Version rollback capability
+- [ ] Enhanced diff output (Requirement 25)
+  - Side-by-side comparison
+  - Value masking
+  - GitHub output format
+  - JSON output format
+  - Summary statistics
 
 ### v1.3.0 - Enterprise Scale (Future)
 
@@ -749,6 +1054,111 @@ OpenTelemetry integration planned for distributed tracing
 - More predictable memory usage
 - Better for large secret trees
 
+### Why Prometheus for Metrics? (v1.1.0)
+
+**Rationale:**
+- Industry standard for cloud-native monitoring
+- Pull-based model (no external dependencies)
+- Rich ecosystem (Grafana, AlertManager)
+- Native Kubernetes integration
+- Simple HTTP endpoint
+
+**Alternatives Considered:**
+- StatsD: Push-based, requires aggregation server
+- CloudWatch: AWS-specific, vendor lock-in
+- Custom logging: No standardization, harder to query
+
+### Why Circuit Breaker Pattern? (v1.1.0)
+
+**Problem:** Cascade failures when Vault or AWS are degraded
+
+**Solution:** Fail fast and recover gracefully
+
+**Benefits:**
+- Prevents resource exhaustion
+- Reduces latency during outages
+- Automatic recovery testing
+- Independent circuits per service
+
+**Implementation Choice:**
+- Custom implementation (not library)
+- Simpler, fewer dependencies
+- Tailored to SecretSync needs
+- ~100 lines of code
+
+## Immediate Actions Required (v1.1.0 Release Blockers)
+
+### Critical Issues
+
+**1. Fix Lint Errors (Estimated: 1-2 hours)**
+
+**Issue 1: Circuit Breaker - staticcheck QF1003**
+- **File:** `pkg/circuitbreaker/circuitbreaker.go:142`
+- **Problem:** Switch statement pattern issue
+- **Impact:** Blocks CI/CD pipeline
+- **Priority:** P0 - CRITICAL
+
+**Issue 2: VaultClient DeepCopy - copylocks**
+- **File:** `pkg/client/vault/vault.go`
+- **Problem:** Copying sync.Mutex in DeepCopy method
+- **Impact:** Blocks CI/CD pipeline
+- **Priority:** P0 - CRITICAL
+
+**2. Verify v1.1.0 Feature Integration (Estimated: 2-3 hours)**
+
+- [ ] Verify metrics endpoint works end-to-end (Requirement 15)
+- [ ] Verify circuit breaker integration in clients (Requirement 16)
+- [ ] Verify error context adoption in codebase (Requirement 17)
+- [ ] Verify queue compaction configuration (Requirement 19)
+
+**3. Add Integration Tests to CI (Estimated: 2-3 hours)**
+
+- [ ] Create integration test job in CI workflow
+- [ ] Add docker-compose step
+- [ ] Run `tests/integration/` suite
+- [ ] Make it required check
+- [ ] Document integration test setup
+
+**Total Estimated Time to Clean v1.1.0:** 8-10 hours
+
+### Non-Functional Requirements
+
+**Performance Targets:**
+- Pipeline SHALL complete within 5 minutes for 1,000 secrets
+- Vault listing SHALL process 100 directories/second minimum
+- AWS Secrets Manager sync SHALL process 50 secrets/second minimum
+- Memory usage SHALL not exceed 500MB for typical workloads
+- API response time p95 SHALL be < 500ms
+
+**Reliability Targets:**
+- Pipeline SHALL succeed 99.9% of the time when services are healthy
+- Transient failures SHALL be retried automatically
+- Circuit breaker SHALL prevent cascade failures
+- State SHALL be consistent (all or nothing for targets)
+- Concurrent executions SHALL not interfere with each other
+
+**Security Requirements:**
+- Credentials SHALL never be logged
+- All external connections SHALL use TLS
+- Secrets SHALL never be written to disk unencrypted
+- Path traversal attacks SHALL be prevented
+- Input validation SHALL prevent injection attacks
+- Least privilege principle SHALL be followed for IAM policies
+
+**Maintainability Requirements:**
+- Code coverage SHALL be ≥ 80%
+- All public APIs SHALL have documentation comments
+- Complex logic SHALL have inline comments explaining why
+- Git commits SHALL follow Conventional Commits format
+- Breaking changes SHALL be documented in CHANGELOG.md
+
+**Usability Requirements:**
+- Error messages SHALL be clear and actionable
+- `--help` flag SHALL provide complete usage information
+- Common operations SHALL be achievable with single command
+- Configuration SHALL be validated before execution
+- Progress indicators SHALL show long-running operations
+
 ## Glossary
 
 - **Vault Source:** Configuration defining Vault mount to read from
@@ -766,7 +1176,7 @@ OpenTelemetry integration planned for distributed tracing
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2024-12-09  
-**Status:** Current architecture (v1.0-v1.2.0)
+**Document Version:** 2.0  
+**Last Updated:** 2025-12-09  
+**Status:** Consolidated design (v1.0-v1.2.0)
 

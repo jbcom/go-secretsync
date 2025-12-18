@@ -26,10 +26,10 @@ type VaultDetection struct {
 
 // AWSDetection contains AWS auto-detection results
 type AWSDetection struct {
-	Available    bool
-	Region       string
-	AuthType     string // env, iam-role, profile, sso
-	HasOrgsAccess bool  // Can we access Organizations API?
+	Available     bool
+	Region        string
+	AuthType      string // env, iam-role, profile, sso
+	HasOrgsAccess bool   // Can we access Organizations API?
 }
 
 // AutoDetectClients detects available clients from environment

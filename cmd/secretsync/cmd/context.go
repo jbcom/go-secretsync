@@ -91,7 +91,7 @@ func runContext(cmd *cobra.Command, args []string) error {
 	} else if awsCtx.OrganizationInfo != nil && awsCtx.OrganizationInfo.IsDelegatedAdmin {
 		fmt.Println("✅ Running from DELEGATED ADMINISTRATOR account")
 		fmt.Println("   This is the recommended configuration.")
-		
+
 		if !awsCtx.CanAccessIdentityCenter() {
 			fmt.Println()
 			fmt.Println("⚠️  No Identity Center delegation detected.")

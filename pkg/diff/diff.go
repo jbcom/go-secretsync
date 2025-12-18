@@ -24,29 +24,38 @@ const (
 
 // SecretChange represents a change to a single secret
 type SecretChange struct {
-	Path       string                 `json:"path"`
-	ChangeType ChangeType             `json:"change_type"`
-	Target     string                 `json:"target,omitempty"`
-	
+	Path       string     `json:"path"`
+	ChangeType ChangeType `json:"change_type"`
+	Target     string     `json:"target,omitempty"`
+
+	// Version tracking (v1.2.0 - Requirement 24)
+	CurrentVersion int `json:"current_version,omitempty"`
+	DesiredVersion int `json:"desired_version,omitempty"`
+
 	// For modified secrets, track key-level changes
 	KeysAdded    []string `json:"keys_added,omitempty"`
 	KeysRemoved  []string `json:"keys_removed,omitempty"`
 	KeysModified []string `json:"keys_modified,omitempty"`
-	
+
 	// Current and desired states (values redacted by default)
 	CurrentKeys []string `json:"current_keys,omitempty"`
 	DesiredKeys []string `json:"desired_keys,omitempty"`
-	
+
 	// Hash comparison for change detection without exposing values
 	CurrentHash string `json:"current_hash,omitempty"`
 	DesiredHash string `json:"desired_hash,omitempty"`
+
+	// Enhanced diff output (v1.2.0 - Requirement 25)
+	CurrentValues map[string]interface{} `json:"current_values,omitempty"` // For side-by-side comparison
+	DesiredValues map[string]interface{} `json:"desired_values,omitempty"` // For side-by-side comparison
+	ShowValues    bool                   `json:"show_values,omitempty"`    // Whether to show actual values
 }
 
 // TargetDiff represents all changes for a single target
 type TargetDiff struct {
-	Target  string          `json:"target"`
-	Changes []SecretChange  `json:"changes"`
-	Summary ChangeSummary   `json:"summary"`
+	Target  string         `json:"target"`
+	Changes []SecretChange `json:"changes"`
+	Summary ChangeSummary  `json:"summary"`
 }
 
 // ChangeSummary provides statistics about changes
@@ -70,10 +79,10 @@ func (s ChangeSummary) HasChanges() bool {
 
 // PipelineDiff represents the complete diff for a pipeline run
 type PipelineDiff struct {
-	Targets     []TargetDiff  `json:"targets"`
-	Summary     ChangeSummary `json:"summary"`
-	DryRun      bool          `json:"dry_run"`
-	ConfigPath  string        `json:"config_path,omitempty"`
+	Targets    []TargetDiff  `json:"targets"`
+	Summary    ChangeSummary `json:"summary"`
+	DryRun     bool          `json:"dry_run"`
+	ConfigPath string        `json:"config_path,omitempty"`
 }
 
 // IsZeroSum returns true if the entire pipeline has no changes
@@ -104,6 +113,11 @@ func (p *PipelineDiff) AddTargetDiff(td TargetDiff) {
 
 // DiffSecrets compares two secret maps and returns the changes
 func DiffSecrets(current, desired map[string]interface{}) []SecretChange {
+	return DiffSecretsWithVersions(current, desired, nil, nil)
+}
+
+// DiffSecretsWithVersions compares two secret maps with version information and returns the changes
+func DiffSecretsWithVersions(current, desired map[string]interface{}, currentVersions, desiredVersions map[string]int) []SecretChange {
 	var changes []SecretChange
 	seen := make(map[string]bool)
 
@@ -112,12 +126,22 @@ func DiffSecrets(current, desired map[string]interface{}) []SecretChange {
 		seen[path] = true
 		currentVal, exists := current[path]
 
+		// Get version information
+		var currentVersion, desiredVersion int
+		if currentVersions != nil {
+			currentVersion = currentVersions[path]
+		}
+		if desiredVersions != nil {
+			desiredVersion = desiredVersions[path]
+		}
+
 		if !exists {
 			// New secret
 			changes = append(changes, SecretChange{
-				Path:        path,
-				ChangeType:  ChangeTypeAdded,
-				DesiredKeys: getMapKeys(desiredVal),
+				Path:           path,
+				ChangeType:     ChangeTypeAdded,
+				DesiredKeys:    getMapKeys(desiredVal),
+				DesiredVersion: desiredVersion,
 			})
 			continue
 		}
@@ -125,18 +149,22 @@ func DiffSecrets(current, desired map[string]interface{}) []SecretChange {
 		// Compare values
 		if utils.DeepEqual(currentVal, desiredVal) {
 			changes = append(changes, SecretChange{
-				Path:        path,
-				ChangeType:  ChangeTypeUnchanged,
-				CurrentKeys: getMapKeys(currentVal),
-				DesiredKeys: getMapKeys(desiredVal),
+				Path:           path,
+				ChangeType:     ChangeTypeUnchanged,
+				CurrentKeys:    getMapKeys(currentVal),
+				DesiredKeys:    getMapKeys(desiredVal),
+				CurrentVersion: currentVersion,
+				DesiredVersion: desiredVersion,
 			})
 		} else {
 			// Modified - compute key-level diff
 			change := SecretChange{
-				Path:        path,
-				ChangeType:  ChangeTypeModified,
-				CurrentKeys: getMapKeys(currentVal),
-				DesiredKeys: getMapKeys(desiredVal),
+				Path:           path,
+				ChangeType:     ChangeTypeModified,
+				CurrentKeys:    getMapKeys(currentVal),
+				DesiredKeys:    getMapKeys(desiredVal),
+				CurrentVersion: currentVersion,
+				DesiredVersion: desiredVersion,
 			}
 			change.KeysAdded, change.KeysRemoved, change.KeysModified = diffMapKeys(currentVal, desiredVal)
 			changes = append(changes, change)
@@ -146,10 +174,15 @@ func DiffSecrets(current, desired map[string]interface{}) []SecretChange {
 	// Check for removed secrets
 	for path, currentVal := range current {
 		if !seen[path] {
+			var currentVersion int
+			if currentVersions != nil {
+				currentVersion = currentVersions[path]
+			}
 			changes = append(changes, SecretChange{
-				Path:        path,
-				ChangeType:  ChangeTypeRemoved,
-				CurrentKeys: getMapKeys(currentVal),
+				Path:           path,
+				ChangeType:     ChangeTypeRemoved,
+				CurrentKeys:    getMapKeys(currentVal),
+				CurrentVersion: currentVersion,
 			})
 		}
 	}
@@ -233,14 +266,20 @@ func diffMapKeys(current, desired interface{}) (added, removed, modified []strin
 type OutputFormat string
 
 const (
-	OutputFormatHuman   OutputFormat = "human"
-	OutputFormatJSON    OutputFormat = "json"
-	OutputFormatGitHub  OutputFormat = "github"  // GitHub Actions annotations
-	OutputFormatCompact OutputFormat = "compact" // One-line summary
+	OutputFormatHuman      OutputFormat = "human"
+	OutputFormatJSON       OutputFormat = "json"
+	OutputFormatGitHub     OutputFormat = "github"     // GitHub Actions annotations
+	OutputFormatCompact    OutputFormat = "compact"    // One-line summary
+	OutputFormatSideBySide OutputFormat = "sidebyside" // Side-by-side comparison (v1.2.0 - Requirement 25)
 )
 
 // FormatDiff formats the pipeline diff according to the specified format
 func FormatDiff(diff *PipelineDiff, format OutputFormat) string {
+	return FormatDiffWithOptions(diff, format, false)
+}
+
+// FormatDiffWithOptions formats the pipeline diff with additional options (v1.2.0 - Requirement 25)
+func FormatDiffWithOptions(diff *PipelineDiff, format OutputFormat, showValues bool) string {
 	switch format {
 	case OutputFormatJSON:
 		return formatJSON(diff)
@@ -248,6 +287,8 @@ func FormatDiff(diff *PipelineDiff, format OutputFormat) string {
 		return formatGitHub(diff)
 	case OutputFormatCompact:
 		return formatCompact(diff)
+	case OutputFormatSideBySide:
+		return formatSideBySide(diff, showValues)
 	default:
 		return formatHuman(diff)
 	}
@@ -302,14 +343,30 @@ func formatHuman(diff *PipelineDiff) string {
 
 			switch c.ChangeType {
 			case ChangeTypeAdded:
-				sb.WriteString(fmt.Sprintf("  + %s (new secret)\n", c.Path))
+				versionInfo := ""
+				if c.DesiredVersion > 0 {
+					versionInfo = fmt.Sprintf(" (v%d)", c.DesiredVersion)
+				}
+				sb.WriteString(fmt.Sprintf("  + %s (new secret)%s\n", c.Path, versionInfo))
 				if len(c.DesiredKeys) > 0 {
 					sb.WriteString(fmt.Sprintf("    keys: %v\n", c.DesiredKeys))
 				}
 			case ChangeTypeRemoved:
-				sb.WriteString(fmt.Sprintf("  - %s (removed)\n", c.Path))
+				versionInfo := ""
+				if c.CurrentVersion > 0 {
+					versionInfo = fmt.Sprintf(" (was v%d)", c.CurrentVersion)
+				}
+				sb.WriteString(fmt.Sprintf("  - %s (removed)%s\n", c.Path, versionInfo))
 			case ChangeTypeModified:
-				sb.WriteString(fmt.Sprintf("  ~ %s (modified)\n", c.Path))
+				versionInfo := ""
+				if c.CurrentVersion > 0 && c.DesiredVersion > 0 {
+					versionInfo = fmt.Sprintf(" (v%d → v%d)", c.CurrentVersion, c.DesiredVersion)
+				} else if c.CurrentVersion > 0 {
+					versionInfo = fmt.Sprintf(" (v%d)", c.CurrentVersion)
+				} else if c.DesiredVersion > 0 {
+					versionInfo = fmt.Sprintf(" (→ v%d)", c.DesiredVersion)
+				}
+				sb.WriteString(fmt.Sprintf("  ~ %s (modified)%s\n", c.Path, versionInfo))
 				if len(c.KeysAdded) > 0 {
 					sb.WriteString(fmt.Sprintf("    + keys: %v\n", c.KeysAdded))
 				}
@@ -403,4 +460,291 @@ func NewDiffResult(diff *PipelineDiff) *DiffResult {
 	}
 
 	return result
+}
+
+// Enhanced diff formatting functions (v1.2.0 - Requirement 25)
+
+// formatSideBySide formats the diff in side-by-side comparison format
+func formatSideBySide(diff *PipelineDiff, showValues bool) string {
+	var sb strings.Builder
+
+	// Header
+	if diff.DryRun {
+		sb.WriteString("=== DRY RUN - No changes will be applied ===\n\n")
+	}
+
+	// Overall summary
+	sb.WriteString("Pipeline Diff Summary (Side-by-Side)\n")
+	sb.WriteString("====================================\n")
+	sb.WriteString(fmt.Sprintf("  Added:     %d\n", diff.Summary.Added))
+	sb.WriteString(fmt.Sprintf("  Removed:   %d\n", diff.Summary.Removed))
+	sb.WriteString(fmt.Sprintf("  Modified:  %d\n", diff.Summary.Modified))
+	sb.WriteString(fmt.Sprintf("  Unchanged: %d\n", diff.Summary.Unchanged))
+	sb.WriteString(fmt.Sprintf("  Total:     %d\n", diff.Summary.Total))
+	sb.WriteString("\n")
+
+	if diff.IsZeroSum() {
+		sb.WriteString("✅ ZERO-SUM: No changes detected\n")
+		return sb.String()
+	}
+
+	sb.WriteString("⚠️  CHANGES DETECTED\n\n")
+
+	// Per-target details with side-by-side comparison
+	for _, td := range diff.Targets {
+		if !td.Summary.HasChanges() {
+			continue
+		}
+
+		sb.WriteString(fmt.Sprintf("Target: %s\n", td.Target))
+		sb.WriteString(strings.Repeat("=", 80) + "\n")
+
+		for _, c := range td.Changes {
+			if c.ChangeType == ChangeTypeUnchanged {
+				continue
+			}
+
+			sb.WriteString(formatSecretChangeSideBySide(c, showValues))
+			sb.WriteString("\n")
+		}
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
+}
+
+// formatSecretChangeSideBySide formats a single secret change in side-by-side format
+func formatSecretChangeSideBySide(change SecretChange, showValues bool) string {
+	var sb strings.Builder
+
+	// Header with change type and version info
+	versionInfo := ""
+	if change.CurrentVersion > 0 && change.DesiredVersion > 0 {
+		versionInfo = fmt.Sprintf(" (v%d → v%d)", change.CurrentVersion, change.DesiredVersion)
+	} else if change.CurrentVersion > 0 {
+		versionInfo = fmt.Sprintf(" (v%d)", change.CurrentVersion)
+	} else if change.DesiredVersion > 0 {
+		versionInfo = fmt.Sprintf(" (→ v%d)", change.DesiredVersion)
+	}
+
+	switch change.ChangeType {
+	case ChangeTypeAdded:
+		sb.WriteString(fmt.Sprintf("+ %s%s\n", change.Path, versionInfo))
+		sb.WriteString("  ┌─ NEW SECRET ─────────────────────────────────────────────────────────┐\n")
+		if showValues && change.DesiredValues != nil {
+			for key, value := range change.DesiredValues {
+				maskedValue := maskValue(value, showValues)
+				sb.WriteString(fmt.Sprintf("  │ + %-20s: %s\n", key, maskedValue))
+			}
+		} else if len(change.DesiredKeys) > 0 {
+			sb.WriteString(fmt.Sprintf("  │   Keys: %v\n", change.DesiredKeys))
+		}
+		sb.WriteString("  └──────────────────────────────────────────────────────────────────────┘\n")
+
+	case ChangeTypeRemoved:
+		sb.WriteString(fmt.Sprintf("- %s%s\n", change.Path, versionInfo))
+		sb.WriteString("  ┌─ REMOVED SECRET ─────────────────────────────────────────────────────┐\n")
+		if showValues && change.CurrentValues != nil {
+			for key, value := range change.CurrentValues {
+				maskedValue := maskValue(value, showValues)
+				sb.WriteString(fmt.Sprintf("  │ - %-20s: %s\n", key, maskedValue))
+			}
+		} else if len(change.CurrentKeys) > 0 {
+			sb.WriteString(fmt.Sprintf("  │   Keys: %v\n", change.CurrentKeys))
+		}
+		sb.WriteString("  └──────────────────────────────────────────────────────────────────────┘\n")
+
+	case ChangeTypeModified:
+		sb.WriteString(fmt.Sprintf("~ %s%s\n", change.Path, versionInfo))
+		sb.WriteString("  ┌─ CURRENT ─────────────────┬─ DESIRED ─────────────────────────────────┐\n")
+
+		// Show side-by-side comparison
+		if showValues && change.CurrentValues != nil && change.DesiredValues != nil {
+			allKeys := make(map[string]bool)
+			for key := range change.CurrentValues {
+				allKeys[key] = true
+			}
+			for key := range change.DesiredValues {
+				allKeys[key] = true
+			}
+
+			for key := range allKeys {
+				currentVal, currentExists := change.CurrentValues[key]
+				desiredVal, desiredExists := change.DesiredValues[key]
+
+				var currentStr, desiredStr string
+				if currentExists {
+					currentStr = maskValue(currentVal, showValues)
+				} else {
+					currentStr = "<not set>"
+				}
+				if desiredExists {
+					desiredStr = maskValue(desiredVal, showValues)
+				} else {
+					desiredStr = "<removed>"
+				}
+
+				// Determine change indicator
+				indicator := " "
+				if !currentExists {
+					indicator = "+"
+				} else if !desiredExists {
+					indicator = "-"
+				} else if !utils.DeepEqual(currentVal, desiredVal) {
+					indicator = "~"
+				}
+
+				sb.WriteString(fmt.Sprintf("  │%s%-10s: %-15s │%s%-10s: %-15s │\n",
+					indicator, key, truncateString(currentStr, 15),
+					indicator, key, truncateString(desiredStr, 15)))
+			}
+		} else {
+			// Show key-level changes
+			if len(change.KeysAdded) > 0 {
+				sb.WriteString(fmt.Sprintf("  │ + Added keys: %-12s │                                           │\n",
+					strings.Join(change.KeysAdded, ", ")))
+			}
+			if len(change.KeysRemoved) > 0 {
+				sb.WriteString(fmt.Sprintf("  │ - Removed keys: %-10s │                                           │\n",
+					strings.Join(change.KeysRemoved, ", ")))
+			}
+			if len(change.KeysModified) > 0 {
+				sb.WriteString(fmt.Sprintf("  │ ~ Modified keys: %-9s │                                           │\n",
+					strings.Join(change.KeysModified, ", ")))
+			}
+		}
+		sb.WriteString("  └───────────────────────────┴───────────────────────────────────────────┘\n")
+	}
+
+	return sb.String()
+}
+
+// maskValue masks sensitive values based on showValues flag and value patterns
+func maskValue(value interface{}, showValues bool) string {
+	if value == nil {
+		return "<nil>"
+	}
+
+	strValue := fmt.Sprintf("%v", value)
+
+	if !showValues {
+		// Always mask values unless explicitly requested
+		return maskSensitiveValue(strValue)
+	}
+
+	// Even when showing values, mask obvious sensitive patterns
+	if isSensitivePattern(strValue) {
+		return maskSensitiveValue(strValue)
+	}
+
+	return strValue
+}
+
+// isSensitivePattern detects common sensitive value patterns
+func isSensitivePattern(value string) bool {
+	lowerValue := strings.ToLower(value)
+
+	// Common sensitive patterns
+	sensitivePatterns := []string{
+		"password", "passwd", "secret", "key", "token", "auth",
+		"credential", "private", "api_key", "apikey", "access_key",
+	}
+
+	for _, pattern := range sensitivePatterns {
+		if strings.Contains(lowerValue, pattern) {
+			return true
+		}
+	}
+
+	// Check for API key patterns (sk-, pk-, etc.)
+	if strings.HasPrefix(lowerValue, "sk-") || strings.HasPrefix(lowerValue, "pk-") ||
+		strings.HasPrefix(lowerValue, "rk_") || strings.HasPrefix(lowerValue, "xoxb-") {
+		return true
+	}
+
+	// Check for common formats (base64, hex, etc.)
+	if len(value) > 20 && (isBase64Like(value) || isHexLike(value)) {
+		return true
+	}
+
+	return false
+}
+
+// maskSensitiveValue creates a masked representation of a sensitive value
+func maskSensitiveValue(value string) string {
+	if len(value) == 0 {
+		return "<empty>"
+	}
+
+	if len(value) <= 4 {
+		return strings.Repeat("*", len(value))
+	}
+
+	// Show first 2 and last 2 characters with stars in between
+	return value[:2] + strings.Repeat("*", len(value)-4) + value[len(value)-2:]
+}
+
+// isBase64Like checks if a string looks like base64
+func isBase64Like(s string) bool {
+	if len(s)%4 != 0 {
+		return false
+	}
+
+	for _, c := range s {
+		if (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') &&
+			(c < '0' || c > '9') && c != '+' && c != '/' && c != '=' {
+			return false
+		}
+	}
+	return true
+}
+
+// isHexLike checks if a string looks like hexadecimal
+func isHexLike(s string) bool {
+	if len(s) < 8 {
+		return false
+	}
+
+	for _, c := range s {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
+			return false
+		}
+	}
+	return true
+}
+
+// truncateString truncates a string to maxLen with ellipsis
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	if maxLen <= 3 {
+		return s[:maxLen]
+	}
+	return s[:maxLen-3] + "..."
+}
+
+// DiffSecretsWithValues compares secrets and includes values for side-by-side comparison (v1.2.0 - Requirement 25)
+func DiffSecretsWithValues(current, desired map[string]interface{}, currentVersions, desiredVersions map[string]int, showValues bool) []SecretChange {
+	changes := DiffSecretsWithVersions(current, desired, currentVersions, desiredVersions)
+
+	// Add value information for enhanced diff output
+	for i := range changes {
+		change := &changes[i]
+		change.ShowValues = showValues
+
+		if currentVal, exists := current[change.Path]; exists {
+			if m, ok := currentVal.(map[string]interface{}); ok {
+				change.CurrentValues = m
+			}
+		}
+
+		if desiredVal, exists := desired[change.Path]; exists {
+			if m, ok := desiredVal.(map[string]interface{}); ok {
+				change.DesiredValues = m
+			}
+		}
+	}
+
+	return changes
 }

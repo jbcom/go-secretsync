@@ -14,8 +14,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sony/gobreaker/v2"
 	log "github.com/sirupsen/logrus"
+	"github.com/sony/gobreaker/v2"
 )
 
 // Config holds circuit breaker configuration
@@ -139,11 +139,12 @@ func (cb *CircuitBreaker) Execute(ctx context.Context, fn func(context.Context) 
 			"state":          cb.cb.State().String(),
 		})
 
-		if err == gobreaker.ErrOpenState {
+		switch {
+		case errors.Is(err, gobreaker.ErrOpenState):
 			l.Debug("Circuit breaker is open - request rejected")
-		} else if err == gobreaker.ErrTooManyRequests {
+		case errors.Is(err, gobreaker.ErrTooManyRequests):
 			l.Debug("Circuit breaker is half-open - too many requests")
-		} else {
+		default:
 			l.WithError(err).Debug("Circuit breaker tracked failure")
 		}
 	}
@@ -184,11 +185,14 @@ func WrapError(err error, cbName string, state gobreaker.State) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, gobreaker.ErrOpenState) {
+
+	// Use switch with errors.Is checks to satisfy staticcheck QF1003
+	switch {
+	case errors.Is(err, gobreaker.ErrOpenState):
 		return fmt.Errorf("circuit breaker %q is open (service degraded): %w", cbName, err)
-	}
-	if errors.Is(err, gobreaker.ErrTooManyRequests) {
+	case errors.Is(err, gobreaker.ErrTooManyRequests):
 		return fmt.Errorf("circuit breaker %q rejected request (too many requests in half-open state): %w", cbName, err)
+	default:
+		return err
 	}
-	return err
 }

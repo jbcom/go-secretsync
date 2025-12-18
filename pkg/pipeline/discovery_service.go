@@ -14,14 +14,20 @@ type DiscoveryService struct {
 	ctx    context.Context
 	awsCtx *AWSExecutionContext
 	config *Config
+
+	// OU caching (v1.2.0)
+	ouCache      map[string][]AccountInfo // Cache OU -> accounts mapping
+	ouChildCache map[string][]string      // Cache OU -> child OUs mapping
 }
 
 // NewDiscoveryService creates a new discovery service
 func NewDiscoveryService(ctx context.Context, awsCtx *AWSExecutionContext, cfg *Config) *DiscoveryService {
 	return &DiscoveryService{
-		ctx:    ctx,
-		awsCtx: awsCtx,
-		config: cfg,
+		ctx:          ctx,
+		awsCtx:       awsCtx,
+		config:       cfg,
+		ouCache:      make(map[string][]AccountInfo),
+		ouChildCache: make(map[string][]string),
 	}
 }
 
