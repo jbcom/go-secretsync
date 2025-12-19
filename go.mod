@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/organizations v1.49.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.93.1
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.40.2
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.67.6
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.67.7
 	github.com/aws/aws-sdk-go-v2/service/ssoadmin v1.36.10
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.2
 	github.com/aws/smithy-go v1.24.0
