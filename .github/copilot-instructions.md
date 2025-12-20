@@ -1,238 +1,69 @@
-# Go Copilot Instructions
+# Copilot Instructions
 
-## Environment Setup
+> **Repository-specific instructions should be in `.github/copilot-instructions-local.md`**
+> This file provides common patterns. Local instructions take precedence.
 
-### Go Version
-Check `go.mod` for required version.
-```bash
-go version  # Should match go.mod
+## Before Starting Any Task
+
+1. **Read the issue/PR description completely**
+2. **Check for existing patterns** in the codebase before creating new ones
+3. **Run the test suite** before and after changes
+4. **Follow the repository's established conventions**
+
+## Code Quality Requirements
+
+### All Changes Must:
+- [ ] Pass linting (`npm run lint` / `uv run ruff check`)
+- [ ] Pass tests (`npm test` / `uv run pytest`)
+- [ ] Include tests for new functionality
+- [ ] Follow existing code style and patterns
+- [ ] Have clear, descriptive commit messages
+
+### Commit Message Format
+```
+<type>(<scope>): <description>
+
+Types: feat, fix, docs, style, refactor, test, chore
 ```
 
-### Dependencies
-```bash
-# Download dependencies
-go mod download
-
-# Tidy dependencies
-go mod tidy
-
-# Verify dependencies
-go mod verify
-```
-
-## Development Commands
-
-### Testing (ALWAYS run tests)
-```bash
-# Run all tests
-go test ./...
-
-# Run with verbose output
-go test -v ./...
-
-# Run with coverage
-go test -cover ./...
-
-# Generate coverage report
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-
-# Run specific test
-go test -v -run TestFunctionName ./path/to/package
-
-# Run benchmarks
-go test -bench=. ./...
-```
-
-### Linting
-```bash
-# Using golangci-lint (preferred)
-golangci-lint run
-
-# Fix issues where possible
-golangci-lint run --fix
-
-# Run specific linters
-golangci-lint run --enable=gofmt,govet,errcheck
-```
-
-### Building
-```bash
-# Build binary
-go build -o bin/app ./cmd/app
-
-# Build with version info
-go build -ldflags="-X main.version=$(git describe --tags)" ./cmd/app
-
-# Cross-compile
-GOOS=linux GOARCH=amd64 go build -o bin/app-linux ./cmd/app
-```
-
-### Formatting
-```bash
-# Format code (always do this)
-go fmt ./...
-
-# More thorough formatting
-gofumpt -w .
-```
-
-## Code Patterns
-
-### Package Structure
-```go
-package mypackage
-
-import (
-    // Standard library first
-    "context"
-    "fmt"
-
-    // External packages
-    "github.com/pkg/errors"
-
-    // Internal packages last
-    "github.com/org/repo/internal/config"
-)
-```
+## Common Patterns
 
 ### Error Handling
-```go
-// Always handle errors explicitly
-result, err := doSomething()
-if err != nil {
-    return fmt.Errorf("failed to do something: %w", err)
-}
+- Always handle errors explicitly
+- Log errors with context
+- Throw typed errors when possible
 
-// Custom error types
-type ValidationError struct {
-    Field   string
-    Message string
-}
+### Testing
+- Write tests FIRST when fixing bugs (TDD)
+- Test edge cases, not just happy paths
+- Mock external dependencies
 
-func (e *ValidationError) Error() string {
-    return fmt.Sprintf("validation failed for %s: %s", e.Field, e.Message)
-}
+### Documentation
+- Update README if adding features
+- Add JSDoc/docstrings to public APIs
+- Include usage examples
 
-// Sentinel errors
-var ErrNotFound = errors.New("not found")
-```
+## Issue Resolution Workflow
 
-### Context Usage
-```go
-// Always pass context as first parameter
-func ProcessData(ctx context.Context, data []byte) error {
-    // Check for cancellation
-    select {
-    case <-ctx.Done():
-        return ctx.Err()
-    default:
-    }
-    
-    // Process...
-    return nil
-}
-```
+1. **Understand**: Read issue, check related code
+2. **Reproduce**: If bug, write failing test first
+3. **Implement**: Make minimal changes to fix/add feature
+4. **Test**: Ensure all tests pass
+5. **Document**: Update docs if needed
+6. **Commit**: Clear message referencing issue
 
-### Testing Patterns
-```go
-package mypackage_test
+## What NOT To Do
 
-import (
-    "testing"
-    
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
-)
+- ❌ Don't refactor unrelated code
+- ❌ Don't add dependencies without justification
+- ❌ Don't skip tests
+- ❌ Don't change formatting of untouched code
+- ❌ Don't make breaking changes without discussion
 
-func TestProcessor_Process(t *testing.T) {
-    t.Run("valid input", func(t *testing.T) {
-        p := NewProcessor()
-        result, err := p.Process([]byte("valid"))
-        
-        require.NoError(t, err)
-        assert.Equal(t, expected, result)
-    })
-    
-    t.Run("invalid input", func(t *testing.T) {
-        p := NewProcessor()
-        _, err := p.Process(nil)
-        
-        assert.ErrorIs(t, err, ErrInvalidInput)
-    })
-}
+## Getting Help
 
-// Table-driven tests
-func TestValidate(t *testing.T) {
-    tests := []struct {
-        name    string
-        input   string
-        wantErr bool
-    }{
-        {"valid", "good", false},
-        {"empty", "", true},
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            err := Validate(tt.input)
-            if tt.wantErr {
-                assert.Error(t, err)
-            } else {
-                assert.NoError(t, err)
-            }
-        })
-    }
-}
-```
-
-### Interface Design
-```go
-// Small interfaces
-type Reader interface {
-    Read(ctx context.Context, id string) (*Item, error)
-}
-
-type Writer interface {
-    Write(ctx context.Context, item *Item) error
-}
-
-// Compose interfaces
-type Repository interface {
-    Reader
-    Writer
-}
-```
-
-## Common Issues
-
-### "undefined" errors
-```bash
-# Ensure all files are built
-go build ./...
-```
-
-### Import cycle
-- Move shared types to a separate package
-- Use interfaces to break dependencies
-
-### Test not finding package
-```go
-// Use _test suffix for external tests
-package mypackage_test  // Can only access exported symbols
-package mypackage       // Can access unexported symbols (internal tests)
-```
-
-## File Structure
-```
-cmd/
-├── app/
-│   └── main.go        # Application entry point
-internal/
-├── config/            # Configuration (not exported)
-├── handlers/          # HTTP/gRPC handlers
-└── repository/        # Data access
-pkg/
-├── client/            # Exported client library
-└── models/            # Exported models
-```
+If blocked:
+1. Check `memory-bank/` for project context
+2. Check `docs/` for architecture decisions
+3. Look at recent PRs for patterns
+4. Ask in the issue for clarification
