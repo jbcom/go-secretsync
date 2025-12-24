@@ -64,7 +64,11 @@ jobs:
   # ============================================
   claude-review:
     name: Claude Code Review
-    if: github.event_name == 'pull_request'
+    # Only run if it's a pull request and the API key is available
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      secrets.ANTHROPIC_API_KEY != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
