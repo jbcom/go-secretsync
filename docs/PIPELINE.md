@@ -352,7 +352,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - uses: aws-actions/configure-aws-credentials@v4
         with:

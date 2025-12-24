@@ -21,7 +21,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -77,7 +77,7 @@ jobs:
       pull-requests: write  # For PR comments
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -124,7 +124,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -159,7 +159,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Merge Secrets
         uses: jbcom/secretsync@v1
@@ -191,7 +191,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -231,7 +231,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -291,7 +291,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -512,7 +512,7 @@ Example policy:
 Ensure your config file is in the repository and the path is correct:
 
 ```yaml
-- uses: actions/checkout@v4  # Required to access repository files
+- uses: actions/checkout@v6  # Required to access repository files
 
 - uses: jbcom/secretsync@v1
   with:
@@ -599,7 +599,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4

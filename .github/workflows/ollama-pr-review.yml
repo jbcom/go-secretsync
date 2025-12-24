@@ -40,7 +40,7 @@ jobs:
   # ============================================
   initial-review:
     name: Initial Code Review
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     outputs:
       pr_number: ${{ github.event.pull_request.number }}
@@ -57,7 +57,8 @@ jobs:
           fi
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        # actions/checkout v6.0.1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -249,7 +250,8 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        # actions/checkout v6.0.1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -447,7 +449,8 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        # actions/checkout v6.0.1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -620,7 +623,8 @@ jobs:
           fi
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        # actions/checkout v6.0.1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           fetch-depth: 0
           # Use CI_GITHUB_TOKEN to allow commits to trigger workflows

@@ -103,7 +103,7 @@ jobs:
       contents: read
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -232,7 +232,7 @@ Use with `continue-on-error: true` to handle:
 ### Config File Not Found
 
 ```yaml
-- uses: actions/checkout@v4  # Must checkout first!
+- uses: actions/checkout@v6  # Must checkout first!
 - uses: jbcom/secretsync@v1
   with:
     config: path/to/config.yaml  # Relative to repo root
