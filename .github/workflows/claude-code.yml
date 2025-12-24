@@ -64,7 +64,8 @@ jobs:
   # ============================================
   claude-review:
     name: Claude Code Review
-    if: github.event_name == 'pull_request'
+    # Skip for dependabot PRs as they don't have access to secrets and usually don't need AI review
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
