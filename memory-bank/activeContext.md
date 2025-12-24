@@ -282,3 +282,19 @@ pkg/
 ### Next Steps
 - PR #69: Observability metrics/docs/tests to finish and merge
 - Release PR #61: finalize after #69, then tag v1.1.0
+
+---
+
+### Session: 2025-12-24 - Fix CI Failures for PR #16 (Ollama Action Bump)
+
+**Completed:**
+- Fixed `Claude Code Review` CI failure on Dependabot PRs by adding a check to skip the job when the actor is `dependabot[bot]`.
+- Synchronized `ai-action/setup-ollama` to `v2` in `.github/workflows/pr-review.yml` to match the major version bump of `ai-action/ollama-action` to `v2` (from PR #16).
+- Verified that other CI checks (Build, Test, Integration Tests, Lint) passed for the PR.
+
+**Files Modified:**
+- `.github/workflows/claude-code.yml`
+- `.github/workflows/pr-review.yml`
+
+**Next Steps:**
+- Monitor PR #16 checks after these changes are pushed.
