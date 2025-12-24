@@ -55,7 +55,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: AI Review
-        uses: ai-action/ollama-action@v1
+        uses: ai-action/ollama-action@v2
         id: review
         with:
           model: glm-4.6:cloud
@@ -165,7 +165,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: AI Review
-        uses: ai-action/ollama-action@v1
+        uses: ai-action/ollama-action@v2
         id: review
         with:
           model: glm-4.6:cloud
