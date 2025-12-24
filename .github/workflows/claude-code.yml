@@ -23,7 +23,7 @@ jobs:
     name: Claude Interactive
     # Security: Only allow trusted users (OWNER, MEMBER, COLLABORATOR) to trigger interactive mode
     # This prevents malicious code injection via AI manipulation from external commenters
-    if: |
+    if: >
       (
         (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
         (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
@@ -34,7 +34,7 @@ jobs:
         github.event.comment.author_association == 'MEMBER' ||
         github.event.comment.author_association == 'COLLABORATOR' ||
         github.event.sender.login == github.repository_owner
-      )
+      ) && secrets.ANTHROPIC_API_KEY != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -64,7 +64,7 @@ jobs:
   # ============================================
   claude-review:
     name: Claude Code Review
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && secrets.ANTHROPIC_API_KEY != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
