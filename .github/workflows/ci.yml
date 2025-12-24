@@ -67,11 +67,11 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      # golangci/golangci-lint-action v9.2.0
+      # golangci/golangci-lint-action v6.1.1
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20
+        uses: golangci/golangci-lint-action@97151000624d08a50672e04300e84b1509b55231
         with:
-          version: v2.7.2
+          version: latest
           install-mode: binary
 
   # ============================================
