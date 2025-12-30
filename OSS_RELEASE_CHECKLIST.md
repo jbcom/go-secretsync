@@ -150,11 +150,11 @@ echo "✅ Repository cleaned for OSS release"
 
 **Enterprise-Grade Secret Synchronization Pipeline**
 
-[![⭐ Star on GitHub](https://img.shields.io/github/stars/jbcom/secretsync?style=social)](https://github.com/jbcom/secretsync/stargazers)
+[![⭐ Star on GitHub](https://img.shields.io/github/stars/extended-data-library/secretssync?style=social)](https://github.com/extended-data-library/secretssync/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/release/jbcom/secretsync.svg)](https://github.com/jbcom/secretsync/releases)
-[![Docker Pulls](https://img.shields.io/docker/pulls/jbcom/secretsync)](https://hub.docker.com/r/jbcom/secretsync)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jbcom/secretsync)](https://goreportcard.com/report/github.com/jbcom/secretsync)
+[![GitHub release](https://img.shields.io/github/release/extended-data-library/secretssync.svg)](https://github.com/extended-data-library/secretssync/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/extended-data-library/secretssync)](https://hub.docker.com/r/extended-data-library/secretssync)
+[![Go Report Card](https://goreportcard.com/badge/github.com/extended-data-library/secretssync)](https://goreportcard.com/report/github.com/extended-data-library/secretssync)
 
 [Quick Start](#quick-start) • [Documentation](./docs/) • [Examples](./examples/) • [GitHub Action](./docs/GITHUB_ACTIONS.md)
 

@@ -17,8 +17,8 @@ permissions:
 env:
   GO_VERSION: "1.25"
   REGISTRY: docker.io
-  IMAGE_NAME: jbcom/secretsync
-  HELM_REGISTRY: oci://registry-1.docker.io/jbcom/secretsync
+  IMAGE_NAME: extended-data-library/secretssync
+  HELM_REGISTRY: oci://registry-1.docker.io/extended-data-library/secretssync
 
 jobs:
   # ============================================
@@ -221,7 +221,7 @@ jobs:
           DIGEST="${{ steps.docker-build.outputs.digest }}"
           echo "Docker image digest: $DIGEST"
           # Update action.yml to use immutable digest
-          sed -i "s|image: \"docker://jbcom/secretsync:.*\"|image: \"docker://jbcom/secretsync@${DIGEST}\"|" action.yml
+          sed -i "s|image: \"docker://extended-data-library/secretssync:.*\"|image: \"docker://extended-data-library/secretssync@${DIGEST}\"|" action.yml
           cat action.yml
 
       - name: Commit action.yml update

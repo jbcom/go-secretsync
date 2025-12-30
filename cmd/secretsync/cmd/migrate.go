@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/extended-data-library/secrets-sync/pkg/pipeline"
+	"github.com/extended-data-library/secretssync/pkg/pipeline"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

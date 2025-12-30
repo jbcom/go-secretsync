@@ -3,14 +3,14 @@
 ## Installation
 
 ```yaml
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
 ```
 
 ## Minimal Example
 
 ```yaml
 - name: Sync Secrets
-  uses: jbcom/secretsync@v1
+  uses: extended-data-library/secretssync@v1
   with:
     config: config.yaml
   env:
@@ -39,7 +39,7 @@
 ### Dry Run (PR Validation)
 
 ```yaml
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
   with:
     config: config.yaml
     dry-run: 'true'
@@ -49,7 +49,7 @@
 ### Specific Targets
 
 ```yaml
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
   with:
     config: config.yaml
     targets: 'Staging,Production'
@@ -58,7 +58,7 @@
 ### Merge Only
 
 ```yaml
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
   with:
     config: config.yaml
     merge-only: 'true'
@@ -67,7 +67,7 @@
 ### With Exit Codes
 
 ```yaml
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
   with:
     config: config.yaml
     dry-run: 'true'
@@ -78,7 +78,7 @@
 ### Debug Mode
 
 ```yaml
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
   with:
     config: config.yaml
     log-level: 'debug'
@@ -112,7 +112,7 @@ jobs:
           aws-region: us-east-1
       
       - name: Sync Secrets
-        uses: jbcom/secretsync@v1
+        uses: extended-data-library/secretssync@v1
         with:
           config: config.yaml
         env:
@@ -216,7 +216,7 @@ Use with `continue-on-error: true` to handle:
 ```yaml
 - name: Check Changes
   id: check
-  uses: jbcom/secretsync@v1
+  uses: extended-data-library/secretssync@v1
   with:
     dry-run: 'true'
     exit-code: 'true'
@@ -233,7 +233,7 @@ Use with `continue-on-error: true` to handle:
 
 ```yaml
 - uses: actions/checkout@v4  # Must checkout first!
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
   with:
     config: path/to/config.yaml  # Relative to repo root
 ```
@@ -258,13 +258,13 @@ Ensure OIDC is configured correctly and trust policy allows your repository.
 
 ```yaml
 # Recommended: Pin to major version
-uses: jbcom/secretsync@v1
+uses: extended-data-library/secretssync@v1
 
 # More stable: Pin to specific version
-uses: jbcom/secretsync@v1.0.0
+uses: extended-data-library/secretssync@v1.0.0
 
 # Not recommended: Latest from main
-uses: jbcom/secretsync@main
+uses: extended-data-library/secretssync@main
 ```
 
 ## License

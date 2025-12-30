@@ -8,7 +8,7 @@ body:
       value: |
         Have a question about SecretSync? We're here to help!
         
-        **💡 Tip**: For general discussions, consider using [GitHub Discussions](https://github.com/jbcom/secretsync/discussions) instead.
+        **💡 Tip**: For general discussions, consider using [GitHub Discussions](https://github.com/extended-data-library/secretssync/discussions) instead.
 
   - type: dropdown
     id: category

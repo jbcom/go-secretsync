@@ -119,7 +119,7 @@ circuit_breaker:
    - `golang:1.25-trixie` (builder)
    - `debian:trixie-slim` (runtime)
 3. WHEN `action.yml` references Docker image THEN it SHALL use digest pinning:
-   - `jbcom/secretsync:v1@sha256:<digest>`
+   - `extended-data-library/secretssync:v1@sha256:<digest>`
 4. WHEN images are updated THEN `CHANGELOG.md` SHALL document version changes
 
 **Files to Update:**

@@ -1,4 +1,4 @@
-module github.com/extended-data-library/secrets-sync
+module github.com/extended-data-library/secretssync
 
 go 1.25.3
 

@@ -209,8 +209,8 @@ Based on community feedback, we're prioritizing:
 
 ## Questions?
 
-- **Roadmap Discussions**: [GitHub Discussions](https://github.com/jbcom/secretsync/discussions)
-- **Feature Requests**: [GitHub Issues](https://github.com/jbcom/secretsync/issues)
+- **Roadmap Discussions**: [GitHub Discussions](https://github.com/extended-data-library/secretssync/discussions)
+- **Feature Requests**: [GitHub Issues](https://github.com/extended-data-library/secretssync/issues)
 - **Enterprise Inquiries**: Contact us through GitHub Issues
 - **Community**: Join our growing community of users and contributors
 

@@ -39,8 +39,8 @@ import (
 	"sync"
 	"time"
 
-	reqctx "github.com/extended-data-library/secrets-sync/pkg/context"
-	"github.com/extended-data-library/secrets-sync/pkg/diff"
+	reqctx "github.com/extended-data-library/secretssync/pkg/context"
+	"github.com/extended-data-library/secretssync/pkg/diff"
 	log "github.com/sirupsen/logrus"
 )
 

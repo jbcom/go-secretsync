@@ -152,7 +152,7 @@ type SecretProvider interface {
 }
 
 // ✅ PREFER - Use existing, tested code
-import "github.com/jbcom/secretsync/pkg/client/vault"
+import "github.com/extended-data-library/secretssync/pkg/client/vault"
 vc := vault.NewVaultClient(config)
 ```
 

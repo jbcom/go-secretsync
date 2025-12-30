@@ -5,7 +5,7 @@
 **Final Status:** ✅ ALL TASKS COMPLETE  
 **Release Date:** December 9, 2025  
 **Version:** v1.2.0 - Production Ready  
-**GitHub Release:** https://github.com/jbcom/secretsync/releases/tag/v1.2.0
+**GitHub Release:** https://github.com/extended-data-library/secretssync/releases/tag/v1.2.0
 
 ---
 
@@ -137,21 +137,21 @@
 ## 🚀 DEPLOYMENT ARTIFACTS
 
 ### Available Now
-- **Docker Images:** `jbcom/secretsync:v1.2.0`
-- **Helm Charts:** `oci://registry-1.docker.io/jbcom/secretsync:1.2.0`
+- **Docker Images:** `extended-data-library/secretssync:v1.2.0`
+- **Helm Charts:** `oci://registry-1.docker.io/extended-data-library/secretssync:1.2.0`
 - **Binaries:** Available on GitHub Releases
-- **GitHub Action:** `jbcom/secretsync@v1.2.0`
+- **GitHub Action:** `extended-data-library/secretssync@v1.2.0`
 
 ### Installation Examples
 ```bash
 # Docker
-docker pull jbcom/secretsync:v1.2.0
+docker pull extended-data-library/secretssync:v1.2.0
 
 # Helm
-helm upgrade --install secretsync oci://registry-1.docker.io/jbcom/secretsync --version 1.2.0
+helm upgrade --install secretsync oci://registry-1.docker.io/extended-data-library/secretssync --version 1.2.0
 
 # GitHub Action
-- uses: jbcom/secretsync@v1.2.0
+- uses: extended-data-library/secretssync@v1.2.0
   with:
     config-file: .secretsync.yaml
 ```
@@ -330,13 +330,13 @@ Every requirement from the original specification has been implemented, tested, 
 ## 📞 SUPPORT & COMMUNITY
 
 ### Getting Help
-- **Documentation:** https://github.com/jbcom/secretsync/blob/main/README.md
-- **Issues:** https://github.com/jbcom/secretsync/issues
-- **Discussions:** https://github.com/jbcom/secretsync/discussions
-- **Examples:** https://github.com/jbcom/secretsync/tree/main/examples
+- **Documentation:** https://github.com/extended-data-library/secretssync/blob/main/README.md
+- **Issues:** https://github.com/extended-data-library/secretssync/issues
+- **Discussions:** https://github.com/extended-data-library/secretssync/discussions
+- **Examples:** https://github.com/extended-data-library/secretssync/tree/main/examples
 
 ### Contributing
-- **Contributing Guide:** https://github.com/jbcom/secretsync/blob/main/CONTRIBUTING.md
+- **Contributing Guide:** https://github.com/extended-data-library/secretssync/blob/main/CONTRIBUTING.md
 - **Code of Conduct:** Professional, respectful collaboration
 - **Development Setup:** Comprehensive instructions in repository
 

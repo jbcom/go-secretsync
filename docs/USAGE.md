@@ -3,7 +3,7 @@
 ## YAML Configuration
 
 ```yaml
-apiVersion: secretsync.jbcom.dev/v1alpha1
+apiVersion: secretsync.extendeddata.dev/v1alpha1
 kind: SecretSync
 metadata:
   name: "example-sync"
@@ -259,7 +259,7 @@ When deployed in Kubernetes, `SecretSync` operations are exposed through the Kub
 
 ```yaml
 cat <<EOF | kubectl apply -f -
-apiVersion: secretsync.jbcom.dev/v1alpha1
+apiVersion: secretsync.extendeddata.dev/v1alpha1
 kind: SecretSync
 metadata:
   name: example

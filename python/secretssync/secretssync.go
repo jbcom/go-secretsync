@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/extended-data-library/secrets-sync/pkg/diff"
-	"github.com/extended-data-library/secrets-sync/pkg/pipeline"
+	"github.com/extended-data-library/secretssync/pkg/diff"
+	"github.com/extended-data-library/secretssync/pkg/pipeline"
 )
 
 // Version of the Python bindings

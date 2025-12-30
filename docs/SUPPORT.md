@@ -21,7 +21,7 @@ Start with our comprehensive documentation:
 
 For questions, ideas, and community discussion:
 
-**[GitHub Discussions](https://github.com/jbcom/secretsync/discussions)**
+**[GitHub Discussions](https://github.com/extended-data-library/secretssync/discussions)**
 
 Best for:
 - How-to questions
@@ -34,7 +34,7 @@ Best for:
 
 For bug reports and feature requests:
 
-**[GitHub Issues](https://github.com/jbcom/secretsync/issues)**
+**[GitHub Issues](https://github.com/extended-data-library/secretssync/issues)**
 
 Before opening an issue:
 1. Search existing issues to avoid duplicates
@@ -75,7 +75,7 @@ What actually happens
 ### How to Report Security Issues
 
 1. **GitHub Security Advisories** (Recommended)
-   - Go to: https://github.com/jbcom/secretsync/security/advisories
+   - Go to: https://github.com/extended-data-library/secretssync/security/advisories
    - Click "Report a vulnerability"
    - Provide details privately
 
@@ -106,7 +106,7 @@ When reporting bugs, please include:
    
    # If using GitHub Action
    # Include the version/tag from your workflow
-   uses: jbcom/secretsync@v1
+   uses: extended-data-library/secretssync@v1
    ```
 
 2. **Configuration** (sanitized - remove secrets!)
@@ -245,22 +245,22 @@ Yes! SecretSync is production-ready. Many organizations use it daily.
 For GitHub Actions:
 ```yaml
 # Pin to major version (recommended)
-uses: jbcom/secretsync@v1
+uses: extended-data-library/secretssync@v1
 
 # Pin to specific version (most stable)
-uses: jbcom/secretsync@v1.2.3
+uses: extended-data-library/secretssync@v1.2.3
 
 # Use latest (not recommended for production)
-uses: jbcom/secretsync@main
+uses: extended-data-library/secretssync@main
 ```
 
 For CLI:
 ```bash
 # Download latest release
-curl -LO https://github.com/jbcom/secretsync/releases/latest/download/secretsync-linux-amd64
+curl -LO https://github.com/extended-data-library/secretssync/releases/latest/download/secretsync-linux-amd64
 
 # Or use go install
-go install github.com/jbcom/secretsync/cmd/secretsync@latest
+go install github.com/extended-data-library/secretssync/cmd/secretsync@latest
 ```
 
 ### Where do I report a security issue?
@@ -283,10 +283,10 @@ Your feedback helps us improve! Please:
 
 ## 🔗 Links
 
-- **Repository**: [github.com/jbcom/secretsync](https://github.com/jbcom/secretsync)
-- **Issues**: [github.com/jbcom/secretsync/issues](https://github.com/jbcom/secretsync/issues)
-- **Discussions**: [github.com/jbcom/secretsync/discussions](https://github.com/jbcom/secretsync/discussions)
-- **Releases**: [github.com/jbcom/secretsync/releases](https://github.com/jbcom/secretsync/releases)
+- **Repository**: [github.com/extended-data-library/secretssync](https://github.com/extended-data-library/secretssync)
+- **Issues**: [github.com/extended-data-library/secretssync/issues](https://github.com/extended-data-library/secretssync/issues)
+- **Discussions**: [github.com/extended-data-library/secretssync/discussions](https://github.com/extended-data-library/secretssync/discussions)
+- **Releases**: [github.com/extended-data-library/secretssync/releases](https://github.com/extended-data-library/secretssync/releases)
 - **License**: [MIT License](../LICENSE)
 
 ---

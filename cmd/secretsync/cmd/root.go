@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/extended-data-library/secrets-sync/pkg/observability"
+	"github.com/extended-data-library/secretssync/pkg/observability"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

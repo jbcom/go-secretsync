@@ -1,5 +1,5 @@
 ---
-apiVersion: secretsync.jbcom.dev/v1alpha1
+apiVersion: secretsync.extendeddata.dev/v1alpha1
 kind: SecretSync
 metadata:
   name: vault-to-vault

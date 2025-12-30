@@ -67,7 +67,7 @@ jobs:
           aws-region: us-east-1
       
       - name: Validate Configuration (Dry Run)
-        uses: jbcom/secretsync@v1.0.0  # Use specific version for first release
+        uses: extended-data-library/secretssync@v1.0.0  # Use specific version for first release
         with:
           config: config.yaml
           dry-run: 'true'
@@ -107,7 +107,7 @@ jobs:
           role-session-name: GitHubActions-SecretSync-${{ github.run_id }}
       
       - name: Run SecretSync
-        uses: jbcom/secretsync@v1.0.0  # Use specific version for first release
+        uses: extended-data-library/secretssync@v1.0.0  # Use specific version for first release
         with:
           config: ${{ steps.config.outputs.config }}
           targets: ${{ github.event.inputs.targets || '' }}

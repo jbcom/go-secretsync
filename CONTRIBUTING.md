@@ -233,7 +233,7 @@ To add support for a new secret store:
    ```go
    package newstore
    
-   import "github.com/jbcom/secretsync/pkg/store"
+   import "github.com/extended-data-library/secretssync/pkg/store"
    
    type Store struct {
        // configuration fields
@@ -283,8 +283,8 @@ Releases are managed by maintainers:
 ## Getting Help
 
 - **Documentation**: Read the [docs/](./docs/) directory
-- **Discussions**: Use [GitHub Discussions](https://github.com/jbcom/secretsync/discussions)
-- **Issues**: For bugs and features, use [GitHub Issues](https://github.com/jbcom/secretsync/issues)
+- **Discussions**: Use [GitHub Discussions](https://github.com/extended-data-library/secretssync/discussions)
+- **Issues**: For bugs and features, use [GitHub Issues](https://github.com/extended-data-library/secretssync/issues)
 
 ## License
 

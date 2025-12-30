@@ -19,7 +19,7 @@ Choose your preferred installation method:
 
 ```bash
 # Download latest release
-curl -LO https://github.com/jbcom/secretsync/releases/latest/download/secretsync-linux-amd64
+curl -LO https://github.com/extended-data-library/secretssync/releases/latest/download/secretsync-linux-amd64
 
 # Make executable and move to PATH
 chmod +x secretsync-linux-amd64
@@ -32,17 +32,17 @@ secretsync version
 ### Option B: Go Install
 
 ```bash
-go install github.com/jbcom/secretsync/cmd/secretsync@latest
+go install github.com/extended-data-library/secretssync/cmd/secretsync@latest
 ```
 
 ### Option C: Docker
 
 ```bash
 # Pull image
-docker pull jbcom/secretsync:latest
+docker pull extended-data-library/secretssync:latest
 
 # Create alias for easier usage
-alias secretsync='docker run --rm -v $(pwd):/workspace jbcom/secretsync'
+alias secretsync='docker run --rm -v $(pwd):/workspace extended-data-library/secretssync'
 ```
 
 ## Step 2: Basic Configuration
@@ -229,7 +229,7 @@ jobs:
           aws-region: us-east-1
       
       - name: Sync Secrets
-        uses: jbcom/secretsync@v1
+        uses: extended-data-library/secretssync@v1
         with:
           config: config.yaml
         env:
@@ -346,10 +346,10 @@ aws secretsmanager list-secrets --region us-east-1
 
 ## Getting Help
 
-- **Documentation**: [Full docs](https://github.com/jbcom/secretsync/tree/main/docs)
-- **Examples**: [Configuration examples](https://github.com/jbcom/secretsync/tree/main/examples)
-- **Issues**: [GitHub Issues](https://github.com/jbcom/secretsync/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/jbcom/secretsync/discussions)
+- **Documentation**: [Full docs](https://github.com/extended-data-library/secretssync/tree/main/docs)
+- **Examples**: [Configuration examples](https://github.com/extended-data-library/secretssync/tree/main/examples)
+- **Issues**: [GitHub Issues](https://github.com/extended-data-library/secretssync/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/extended-data-library/secretssync/discussions)
 
 ## What's Next?
 

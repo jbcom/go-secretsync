@@ -58,13 +58,13 @@ SecretSync provides **fully automated, enterprise-grade secret synchronization**
 ### Installation
 ```bash
 # Go install
-go install github.com/jbcom/secretsync/cmd/secretsync@latest
+go install github.com/extended-data-library/secretssync/cmd/secretsync@latest
 
 # Docker
-docker pull jbcom/secretsync:latest
+docker pull extended-data-library/secretssync:latest
 
 # GitHub Action
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
 ```
 
 ### Basic Usage
@@ -128,16 +128,16 @@ targets:
 ## 🌟 Community & Support
 
 ### Getting Started
-- **📚 [Documentation](https://github.com/jbcom/secretsync/tree/main/docs)**: Comprehensive guides and examples
-- **🚀 [Getting Started Guide](https://github.com/jbcom/secretsync/blob/main/docs/GETTING_STARTED.md)**: Step-by-step tutorial
-- **❓ [FAQ](https://github.com/jbcom/secretsync/blob/main/docs/FAQ.md)**: Common questions answered
-- **📋 [Examples](https://github.com/jbcom/secretsync/tree/main/examples)**: Real-world configurations
+- **📚 [Documentation](https://github.com/extended-data-library/secretssync/tree/main/docs)**: Comprehensive guides and examples
+- **🚀 [Getting Started Guide](https://github.com/extended-data-library/secretssync/blob/main/docs/GETTING_STARTED.md)**: Step-by-step tutorial
+- **❓ [FAQ](https://github.com/extended-data-library/secretssync/blob/main/docs/FAQ.md)**: Common questions answered
+- **📋 [Examples](https://github.com/extended-data-library/secretssync/tree/main/examples)**: Real-world configurations
 
 ### Community
-- **💬 [GitHub Discussions](https://github.com/jbcom/secretsync/discussions)**: Community Q&A and feature discussions
-- **🐛 [Issues](https://github.com/jbcom/secretsync/issues)**: Bug reports and feature requests
-- **🤝 [Contributing](https://github.com/jbcom/secretsync/blob/main/CONTRIBUTING.md)**: How to contribute
-- **🗺️ [Roadmap](https://github.com/jbcom/secretsync/blob/main/docs/ROADMAP.md)**: Future development plans
+- **💬 [GitHub Discussions](https://github.com/extended-data-library/secretssync/discussions)**: Community Q&A and feature discussions
+- **🐛 [Issues](https://github.com/extended-data-library/secretssync/issues)**: Bug reports and feature requests
+- **🤝 [Contributing](https://github.com/extended-data-library/secretssync/blob/main/CONTRIBUTING.md)**: How to contribute
+- **🗺️ [Roadmap](https://github.com/extended-data-library/secretssync/blob/main/docs/ROADMAP.md)**: Future development plans
 
 ## 🙏 Attribution
 
@@ -147,16 +147,16 @@ SecretSync has evolved into an independent project with its own architecture, fe
 
 ## 🔗 Links
 
-- **🌟 [GitHub Repository](https://github.com/jbcom/secretsync)** - Star us!
-- **🐳 [Docker Hub](https://hub.docker.com/r/jbcom/secretsync)** - Pull the latest image
-- **📦 [GitHub Releases](https://github.com/jbcom/secretsync/releases)** - Download binaries
+- **🌟 [GitHub Repository](https://github.com/extended-data-library/secretssync)** - Star us!
+- **🐳 [Docker Hub](https://hub.docker.com/r/extended-data-library/secretssync)** - Pull the latest image
+- **📦 [GitHub Releases](https://github.com/extended-data-library/secretssync/releases)** - Download binaries
 - **🎯 [GitHub Action](https://github.com/marketplace/actions/secretsync)** - Use in your workflows
 
 ---
 
 **Ready to transform your secret management? Give SecretSync a try and let us know what you think!**
 
-⭐ **[Star SecretSync on GitHub](https://github.com/jbcom/secretsync)** ⭐
+⭐ **[Star SecretSync on GitHub](https://github.com/extended-data-library/secretssync)** ⭐
 
 ---
 
@@ -173,7 +173,7 @@ Enterprise-grade secret sync from HashiCorp Vault to AWS Secrets Manager with:
 ✅ Enhanced diff with masking
 ✅ Native GitHub Action
 
-⭐ https://github.com/jbcom/secretsync
+⭐ https://github.com/extended-data-library/secretssync
 
 #DevOps #SecretManagement #Vault #AWS #OpenSource
 ```
@@ -194,7 +194,7 @@ After months of development, we've created an enterprise-grade secret synchroniz
 Perfect for DevOps teams managing multi-account AWS environments, Kubernetes deployments, and enterprise-scale secret management.
 
 🚀 Ready to try it? Check out our comprehensive documentation and examples:
-https://github.com/jbcom/secretsync
+https://github.com/extended-data-library/secretssync
 
 #DevOps #SecretManagement #HashiCorpVault #AWS #OpenSource #Enterprise #Security
 ```
@@ -239,9 +239,9 @@ versioning:
 The project originated as a fork of vault-secret-sync but has evolved into something much more comprehensive. It's MIT licensed and ready for production use.
 
 **Links:**
-- GitHub: https://github.com/jbcom/secretsync
-- Documentation: https://github.com/jbcom/secretsync/tree/main/docs
-- Getting Started: https://github.com/jbcom/secretsync/blob/main/docs/GETTING_STARTED.md
+- GitHub: https://github.com/extended-data-library/secretssync
+- Documentation: https://github.com/extended-data-library/secretssync/tree/main/docs
+- Getting Started: https://github.com/extended-data-library/secretssync/blob/main/docs/GETTING_STARTED.md
 
 Would love to hear your thoughts and feedback! Happy to answer any questions about the architecture or use cases.
 ```
@@ -264,8 +264,8 @@ The project handles enterprise scale (1000+ AWS accounts) and includes comprehen
 
 Perfect for organizations managing secrets across multiple AWS accounts, Kubernetes environments, or those migrating from Vault to AWS Secrets Manager.
 
-GitHub: https://github.com/jbcom/secretsync
-Documentation: https://github.com/jbcom/secretsync/tree/main/docs
+GitHub: https://github.com/extended-data-library/secretssync
+Documentation: https://github.com/extended-data-library/secretssync/tree/main/docs
 
 MIT licensed and ready for production use.
 ```
