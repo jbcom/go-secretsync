@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -18,6 +19,22 @@ import (
 // Version of the Python bindings
 const Version = "0.1.0"
 
+// Operation constants for Python clients
+const (
+	OperationPipeline = "pipeline"
+	OperationMerge    = "merge"
+	OperationSync     = "sync"
+)
+
+// OutputFormat constants for Python clients
+const (
+	OutputFormatHuman      = "human"
+	OutputFormatJSON       = "json"
+	OutputFormatGitHub     = "github"
+	OutputFormatCompact    = "compact"
+	OutputFormatSideBySide = "side-by-side"
+)
+
 // PipelineConfig represents the pipeline configuration in a Python-friendly format
 type PipelineConfig struct {
 	Path string // Path to YAML configuration file
@@ -26,12 +43,13 @@ type PipelineConfig struct {
 // SyncOptions configures pipeline execution
 type SyncOptions struct {
 	DryRun          bool   // If true, don't make actual changes
-	Operation       string // "merge", "sync", or "pipeline"
+	Operation       string // "merge", "sync", or "pipeline" (use Operation* constants)
 	Targets         string // Comma-separated list of targets (empty for all)
 	ContinueOnError bool   // Continue on errors
 	Parallelism     int    // Number of parallel operations
 	ComputeDiff     bool   // Compute and return diff
-	OutputFormat    string // "human", "json", "github", "compact", "side-by-side"
+	OutputFormat    string // "human", "json", "github", "compact", "side-by-side" (use OutputFormat* constants)
+	ShowValues      bool   // If true, show unmasked secret values in diff output
 }
 
 // SyncResult represents the outcome of a sync operation
@@ -53,12 +71,13 @@ type SyncResult struct {
 func DefaultSyncOptions() *SyncOptions {
 	return &SyncOptions{
 		DryRun:          false,
-		Operation:       "pipeline",
+		Operation:       OperationPipeline,
 		Targets:         "",
 		ContinueOnError: false,
 		Parallelism:     4,
 		ComputeDiff:     false,
-		OutputFormat:    "human",
+		OutputFormat:    OutputFormatHuman,
+		ShowValues:      false,
 	}
 }
 
@@ -103,6 +122,11 @@ func RunPipeline(configPath string, opts *SyncOptions) *SyncResult {
 	result := &SyncResult{}
 	startTime := time.Now()
 
+	// Handle nil options by using defaults
+	if opts == nil {
+		opts = DefaultSyncOptions()
+	}
+
 	ctx := context.Background()
 
 	// Load configuration
@@ -132,11 +156,11 @@ func RunPipeline(configPath string, opts *SyncOptions) *SyncResult {
 	}
 
 	switch opts.Operation {
-	case "merge":
+	case OperationMerge:
 		pipelineOpts.Operation = pipeline.OperationMerge
-	case "sync":
+	case OperationSync:
 		pipelineOpts.Operation = pipeline.OperationSync
-	case "pipeline", "":
+	case OperationPipeline, "":
 		pipelineOpts.Operation = pipeline.OperationPipeline
 	default:
 		result.ErrorMessage = fmt.Sprintf("Unknown operation: %s", opts.Operation)
@@ -146,13 +170,13 @@ func RunPipeline(configPath string, opts *SyncOptions) *SyncResult {
 
 	// Parse output format
 	switch opts.OutputFormat {
-	case "json":
+	case OutputFormatJSON:
 		pipelineOpts.OutputFormat = diff.OutputFormatJSON
-	case "github":
+	case OutputFormatGitHub:
 		pipelineOpts.OutputFormat = diff.OutputFormatGitHub
-	case "compact":
+	case OutputFormatCompact:
 		pipelineOpts.OutputFormat = diff.OutputFormatCompact
-	case "side-by-side":
+	case OutputFormatSideBySide:
 		pipelineOpts.OutputFormat = diff.OutputFormatSideBySide
 	default:
 		pipelineOpts.OutputFormat = diff.OutputFormatHuman
@@ -197,7 +221,7 @@ func RunPipeline(configPath string, opts *SyncOptions) *SyncResult {
 	if opts.ComputeDiff {
 		pipelineDiff := p.Diff()
 		if pipelineDiff != nil {
-			result.DiffOutput = diff.FormatDiffWithOptions(pipelineDiff, pipelineOpts.OutputFormat, false)
+			result.DiffOutput = diff.FormatDiffWithOptions(pipelineDiff, pipelineOpts.OutputFormat, opts.ShowValues)
 		}
 	}
 
@@ -216,7 +240,7 @@ func DryRun(configPath string) *SyncResult {
 // Merge runs only the merge phase of the pipeline
 func Merge(configPath string, dryRun bool) *SyncResult {
 	opts := DefaultSyncOptions()
-	opts.Operation = "merge"
+	opts.Operation = OperationMerge
 	opts.DryRun = dryRun
 	opts.ComputeDiff = dryRun
 	return RunPipeline(configPath, opts)
@@ -225,37 +249,39 @@ func Merge(configPath string, dryRun bool) *SyncResult {
 // Sync runs only the sync phase of the pipeline
 func Sync(configPath string, dryRun bool) *SyncResult {
 	opts := DefaultSyncOptions()
-	opts.Operation = "sync"
+	opts.Operation = OperationSync
 	opts.DryRun = dryRun
 	opts.ComputeDiff = dryRun
 	return RunPipeline(configPath, opts)
 }
 
-// GetTargets returns the list of targets from a configuration
+// GetTargets returns the list of targets from a configuration (sorted alphabetically)
 func GetTargets(configPath string) ([]string, string) {
-	cfg, errMsg := loadConfig(configPath)
+	cfg, errMsg := loadAndValidateConfig(configPath)
 	if errMsg != "" {
 		return nil, errMsg
 	}
 
-	var targets []string
+	targets := make([]string, 0, len(cfg.Targets))
 	for name := range cfg.Targets {
 		targets = append(targets, name)
 	}
+	sort.Strings(targets)
 	return targets, ""
 }
 
-// GetSources returns the list of sources from a configuration
+// GetSources returns the list of sources from a configuration (sorted alphabetically)
 func GetSources(configPath string) ([]string, string) {
-	cfg, errMsg := loadConfig(configPath)
+	cfg, errMsg := loadAndValidateConfig(configPath)
 	if errMsg != "" {
 		return nil, errMsg
 	}
 
-	var sources []string
+	sources := make([]string, 0, len(cfg.Sources))
 	for name := range cfg.Sources {
 		sources = append(sources, name)
 	}
+	sort.Strings(sources)
 	return sources, ""
 }
 
@@ -283,8 +309,8 @@ type ConfigInfo struct {
 	ErrorMessage  string   // Error message if invalid
 	SourceCount   int      // Number of sources
 	TargetCount   int      // Number of targets
-	Sources       []string // List of source names
-	Targets       []string // List of target names
+	Sources       []string // List of source names (sorted alphabetically)
+	Targets       []string // List of target names (sorted alphabetically)
 	HasMergeStore bool     // Whether a merge store is configured
 	VaultAddress  string   // Vault address if configured
 	AWSRegion     string   // AWS region if configured
@@ -307,12 +333,18 @@ func GetConfigInfo(configPath string) *ConfigInfo {
 	info.AWSRegion = cfg.AWS.Region
 	info.HasMergeStore = cfg.MergeStore.Vault != nil || cfg.MergeStore.S3 != nil
 
+	// Build sorted slices for deterministic output
+	info.Sources = make([]string, 0, len(cfg.Sources))
 	for name := range cfg.Sources {
 		info.Sources = append(info.Sources, name)
 	}
+	sort.Strings(info.Sources)
+
+	info.Targets = make([]string, 0, len(cfg.Targets))
 	for name := range cfg.Targets {
 		info.Targets = append(info.Targets, name)
 	}
+	sort.Strings(info.Targets)
 
 	return info
 }

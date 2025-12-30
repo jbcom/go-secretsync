@@ -33,7 +33,7 @@ For maximum performance, build the native Python bindings:
 
 ```bash
 # Prerequisites
-pip install pybindgen
+pip install pybindgen build
 go install golang.org/x/tools/cmd/goimports@latest
 go install github.com/go-python/gopy@latest
 
@@ -117,7 +117,7 @@ result = connector.run_pipeline("pipeline.yaml")
 # Or customize options
 options = SyncOptions(
     operation=SyncOperation.SYNC,  # Only sync phase
-    targets=["production", "staging"],
+    targets="production,staging",  # Comma-separated string
     parallelism=8,
     continue_on_error=True,
 )

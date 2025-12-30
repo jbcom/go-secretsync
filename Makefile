@@ -57,8 +57,9 @@ python-install: python-bindings
 
 python-clean:
 	@echo "Cleaning Python bindings..."
-	rm -rf $(PYTHON_OUTPUT)/*.so $(PYTHON_OUTPUT)/*.c $(PYTHON_OUTPUT)/*.h
-	rm -rf $(PYTHON_OUTPUT)/build $(PYTHON_OUTPUT)/dist $(PYTHON_OUTPUT)/*.egg-info
+	rm -rf $(PYTHON_OUTPUT)/*.so $(PYTHON_OUTPUT)/*.c $(PYTHON_OUTPUT)/*.h \
+		$(PYTHON_OUTPUT)/build $(PYTHON_OUTPUT)/dist $(PYTHON_OUTPUT)/*.egg-info \
+		$(PYTHON_OUTPUT)/__pycache__ $(PYTHON_OUTPUT)/*.pyc $(PYTHON_OUTPUT)/*.pyo
 
 ## Test targets
 test: test-unit

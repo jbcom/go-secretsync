@@ -133,7 +133,7 @@ SecretSync provides Python bindings via [gopy](https://github.com/go-python/gopy
 
 ```bash
 # Install prerequisites
-pip install pybindgen
+pip install pybindgen build
 go install golang.org/x/tools/cmd/goimports@latest
 go install github.com/go-python/gopy@latest
 
