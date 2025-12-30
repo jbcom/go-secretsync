@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/jbcom/secretsync/pkg/driver"
+	"github.com/extended-data-library/secrets-sync/pkg/driver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

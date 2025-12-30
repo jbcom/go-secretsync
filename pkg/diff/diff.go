@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jbcom/secretsync/pkg/utils"
+	"github.com/extended-data-library/secrets-sync/pkg/utils"
 )
 
 // ChangeType represents the type of change detected

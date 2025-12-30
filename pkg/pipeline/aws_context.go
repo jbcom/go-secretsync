@@ -33,7 +33,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssoadmin"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/smithy-go"
-	"github.com/jbcom/secretsync/pkg/circuitbreaker"
+	"github.com/extended-data-library/secrets-sync/pkg/circuitbreaker"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jbcom/secretsync/pkg/diff"
+	"github.com/extended-data-library/secrets-sync/pkg/diff"
 	log "github.com/sirupsen/logrus"
 )
 

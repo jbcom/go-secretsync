@@ -1,4 +1,4 @@
-module github.com/jbcom/secretsync
+module github.com/extended-data-library/secrets-sync
 
 go 1.25.3
 
