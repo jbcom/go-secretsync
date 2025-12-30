@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/extended-data-library/secretssync/pkg/diff"
@@ -66,17 +67,34 @@ func NewPipelineConfig(path string) *PipelineConfig {
 	return &PipelineConfig{Path: path}
 }
 
-// ValidateConfig validates a pipeline configuration file
-func ValidateConfig(configPath string) (bool, string) {
+// loadConfig loads a configuration file and returns the config or an error message
+func loadConfig(configPath string) (*pipeline.Config, string) {
 	cfg, err := pipeline.LoadConfig(configPath)
 	if err != nil {
-		return false, fmt.Sprintf("Failed to load config: %v", err)
+		return nil, fmt.Sprintf("Failed to load config: %v", err)
+	}
+	return cfg, ""
+}
+
+// loadAndValidateConfig loads and validates a configuration file
+func loadAndValidateConfig(configPath string) (*pipeline.Config, string) {
+	cfg, errMsg := loadConfig(configPath)
+	if errMsg != "" {
+		return nil, errMsg
 	}
 
 	if err := cfg.Validate(); err != nil {
-		return false, fmt.Sprintf("Invalid configuration: %v", err)
+		return nil, fmt.Sprintf("Invalid configuration: %v", err)
 	}
+	return cfg, ""
+}
 
+// ValidateConfig validates a pipeline configuration file
+func ValidateConfig(configPath string) (bool, string) {
+	_, errMsg := loadAndValidateConfig(configPath)
+	if errMsg != "" {
+		return false, errMsg
+	}
 	return true, "Configuration is valid"
 }
 
@@ -87,10 +105,10 @@ func RunPipeline(configPath string, opts *SyncOptions) *SyncResult {
 
 	ctx := context.Background()
 
-	// Load and validate configuration
-	cfg, err := pipeline.LoadConfig(configPath)
-	if err != nil {
-		result.ErrorMessage = fmt.Sprintf("Failed to load config: %v", err)
+	// Load configuration
+	cfg, errMsg := loadConfig(configPath)
+	if errMsg != "" {
+		result.ErrorMessage = errMsg
 		result.DurationMs = time.Since(startTime).Milliseconds()
 		return result
 	}
@@ -140,10 +158,9 @@ func RunPipeline(configPath string, opts *SyncOptions) *SyncResult {
 		pipelineOpts.OutputFormat = diff.OutputFormatHuman
 	}
 
-	// Parse targets
+	// Parse targets using strings.Split (consistent with CLI behavior)
 	if opts.Targets != "" {
-		targets := splitTargets(opts.Targets)
-		pipelineOpts.Targets = targets
+		pipelineOpts.Targets = splitTargets(opts.Targets)
 	}
 
 	// Run pipeline
@@ -216,9 +233,9 @@ func Sync(configPath string, dryRun bool) *SyncResult {
 
 // GetTargets returns the list of targets from a configuration
 func GetTargets(configPath string) ([]string, string) {
-	cfg, err := pipeline.LoadConfig(configPath)
-	if err != nil {
-		return nil, fmt.Sprintf("Failed to load config: %v", err)
+	cfg, errMsg := loadConfig(configPath)
+	if errMsg != "" {
+		return nil, errMsg
 	}
 
 	var targets []string
@@ -230,9 +247,9 @@ func GetTargets(configPath string) ([]string, string) {
 
 // GetSources returns the list of sources from a configuration
 func GetSources(configPath string) ([]string, string) {
-	cfg, err := pipeline.LoadConfig(configPath)
-	if err != nil {
-		return nil, fmt.Sprintf("Failed to load config: %v", err)
+	cfg, errMsg := loadConfig(configPath)
+	if errMsg != "" {
+		return nil, errMsg
 	}
 
 	var sources []string
@@ -242,26 +259,20 @@ func GetSources(configPath string) ([]string, string) {
 	return sources, ""
 }
 
-// Helper to split comma-separated targets
+// splitTargets splits a comma-separated string of targets into a slice.
+// Uses strings.Split for consistency with CLI behavior.
 func splitTargets(targets string) []string {
 	if targets == "" {
 		return nil
 	}
 
-	var result []string
-	current := ""
-	for _, c := range targets {
-		if c == ',' {
-			if current != "" {
-				result = append(result, current)
-			}
-			current = ""
-		} else if c != ' ' {
-			current += string(c)
+	parts := strings.Split(targets, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			result = append(result, trimmed)
 		}
-	}
-	if current != "" {
-		result = append(result, current)
 	}
 	return result
 }
@@ -283,14 +294,9 @@ type ConfigInfo struct {
 func GetConfigInfo(configPath string) *ConfigInfo {
 	info := &ConfigInfo{}
 
-	cfg, err := pipeline.LoadConfig(configPath)
-	if err != nil {
-		info.ErrorMessage = fmt.Sprintf("Failed to load config: %v", err)
-		return info
-	}
-
-	if err := cfg.Validate(); err != nil {
-		info.ErrorMessage = fmt.Sprintf("Invalid configuration: %v", err)
+	cfg, errMsg := loadAndValidateConfig(configPath)
+	if errMsg != "" {
+		info.ErrorMessage = errMsg
 		return info
 	}
 
