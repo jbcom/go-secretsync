@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jbcom/secretsync/pkg/client/aws"
-	"github.com/jbcom/secretsync/pkg/client/vault"
+	"github.com/extended-data-library/secretssync/pkg/client/aws"
+	"github.com/extended-data-library/secretssync/pkg/client/vault"
 	log "github.com/sirupsen/logrus"
 )
 

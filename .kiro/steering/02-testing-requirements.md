@@ -218,7 +218,7 @@ import (
     "testing"
     "context"
     
-    "github.com/jbcom/secretsync/pkg/pipeline"
+    "github.com/extended-data-library/secretssync/pkg/pipeline"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )

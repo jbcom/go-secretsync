@@ -1,11 +1,11 @@
 // +k8s:deepcopy-gen=package
-// +groupName=secretsync.jbcom.dev
+// +groupName=secretsync.extendeddata.dev
 package v1alpha1
 
 import (
-	"github.com/jbcom/secretsync/pkg/client/aws"
-	"github.com/jbcom/secretsync/pkg/client/vault"
-	"github.com/jbcom/secretsync/pkg/discovery/identitycenter"
+	"github.com/extended-data-library/secretssync/pkg/client/aws"
+	"github.com/extended-data-library/secretssync/pkg/client/vault"
+	"github.com/extended-data-library/secretssync/pkg/discovery/identitycenter"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

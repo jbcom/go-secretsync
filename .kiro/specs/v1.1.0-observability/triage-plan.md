@@ -56,7 +56,7 @@
 
 2. **Placeholder Digest in action.yml** (CRITICAL - Cursor bot)
    - ❌ `PLACEHOLDER_UPDATED_BY_RELEASE_WORKFLOW` will break GitHub Action
-   - ✅ **Fix:** Revert to `docker://jbcom/secretsync:v1` until release workflow updates it
+   - ✅ **Fix:** Revert to `docker://extended-data-library/secretssync:v1` until release workflow updates it
    - **Action:** Update action.yml to use tag until digest automation exists
 
 3. **Trixie vs Bookworm** (GitHub Actions bot)
@@ -70,7 +70,7 @@
    - **Action:** Verify compatibility with integration tests
 
 **Required Changes:**
-- [ ] Fix action.yml: Revert to `docker://jbcom/secretsync:v1` (remove placeholder)
+- [ ] Fix action.yml: Revert to `docker://extended-data-library/secretssync:v1` (remove placeholder)
 - [ ] Verify all images use Trixie consistently
 - [ ] Run integration tests to verify compatibility
 - [ ] Dismiss incorrect Go 1.25 comment with reference to steering doc
@@ -237,7 +237,7 @@ PR #67 (Queue Compaction)
 
 **Comment 2: Placeholder digest breaks action (Cursor)**
 - **Status:** ✅ VALID - Critical bug
-- **Resolution:** Revert to `docker://jbcom/secretsync:v1`
+- **Resolution:** Revert to `docker://extended-data-library/secretssync:v1`
 - **Action:** Update action.yml immediately
 
 **Comment 3: Trixie vs Bookworm (GitHub Actions)**
@@ -319,8 +319,8 @@ PR #67 (Queue Compaction)
    
    # Fix action.yml - revert to tag
    # Edit: action.yml line 11
-   # Change: docker://jbcom/secretsync:v1@sha256:PLACEHOLDER...
-   # To: docker://jbcom/secretsync:v1
+   # Change: docker://extended-data-library/secretssync:v1@sha256:PLACEHOLDER...
+   # To: docker://extended-data-library/secretssync:v1
    
    # Commit and push
    git commit -m "fix(action): revert to tag until digest automation exists"

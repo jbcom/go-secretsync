@@ -72,8 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **PROJECT RENAME**: vault-secret-sync → SecretSync
 - CLI renamed from `vss` to `secretsync`
-- Docker images published to `docker.io/jbcom/secretsync`
-- Helm charts published to `oci://registry-1.docker.io/jbcom/secretsync`
+- Docker images published to `docker.io/extended-data-library/secretssync`
+- Helm charts published to `oci://registry-1.docker.io/extended-data-library/secretssync`
 - Simplified pipeline architecture (removed legacy operator complexity)
 - Environment variable prefix changed from `VSS_` to `SECRETSYNC_`
 
@@ -106,7 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Current Maintainer
 - **Organization**: jbcom
-- **Repository**: [jbcom/secretsync](https://github.com/jbcom/secretsync)
+- **Repository**: [extended-data-library/secretssync](https://github.com/extended-data-library/secretssync)
 
 ### Original Source
 - **Author**: Robert Lestak

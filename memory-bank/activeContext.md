@@ -248,7 +248,7 @@ pkg/
 - `action.yml` - GitHub Action definition
 
 ### External Services
-- **Docker Hub:** `jbcom/secretsync` (image registry)
+- **Docker Hub:** `extended-data-library/secretssync` (image registry)
 - **GitHub:** Issues, PRs, Actions, Packages
 - **Vault:** HashiCorp Vault 1.17.6 (testing)
 - **LocalStack:** AWS service mocks for testing

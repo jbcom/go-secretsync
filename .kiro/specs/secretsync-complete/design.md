@@ -544,7 +544,7 @@ secretsync pipeline --config config.yaml --metrics-port 9090
 ### 2. GitHub Action
 
 ```yaml
-- uses: jbcom/secretsync@v1
+- uses: extended-data-library/secretssync@v1
   with:
     config: .secretsync/config.yaml
     dry-run: 'false'
@@ -572,7 +572,7 @@ spec:
           serviceAccountName: secretsync
           containers:
           - name: secretsync
-            image: jbcom/secretsync:v1
+            image: extended-data-library/secretssync:v1
             args:
             - pipeline
             - --config

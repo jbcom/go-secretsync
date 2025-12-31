@@ -16,6 +16,18 @@ vss
 *.dylib
 dist/
 build/
+bin/
+
+# Python bindings (gopy)
+python/secretssync/*.so
+python/secretssync/*.c
+python/secretssync/*.h
+python/secretssync/build/
+python/secretssync/dist/
+python/secretssync/*.egg-info/
+python/secretssync/__pycache__/
+*.pyc
+*.pyo
 
 # Test artifacts
 *.test

@@ -193,29 +193,29 @@ This release represents months of focused development on enterprise-grade featur
 
 ### Docker
 ```bash
-docker pull jbcom/secretsync:v1.2.0
+docker pull extended-data-library/secretssync:v1.2.0
 ```
 
 ### Helm
 ```bash
-helm upgrade --install secretsync oci://registry-1.docker.io/jbcom/secretsync --version 1.2.0
+helm upgrade --install secretsync oci://registry-1.docker.io/extended-data-library/secretssync --version 1.2.0
 ```
 
 ### GitHub Action
 ```yaml
-- uses: jbcom/secretsync@v1.2.0
+- uses: extended-data-library/secretssync@v1.2.0
   with:
     config-file: .secretsync.yaml
     dry-run: false
 ```
 
 ### Binary Releases
-Download from [GitHub Releases](https://github.com/jbcom/secretsync/releases/tag/v1.2.0)
+Download from [GitHub Releases](https://github.com/extended-data-library/secretssync/releases/tag/v1.2.0)
 
 ---
 
-**Full Changelog**: https://github.com/jbcom/secretsync/compare/v1.1.0...v1.2.0
+**Full Changelog**: https://github.com/extended-data-library/secretssync/compare/v1.1.0...v1.2.0
 
-**Documentation**: https://github.com/jbcom/secretsync/blob/main/README.md
+**Documentation**: https://github.com/extended-data-library/secretssync/blob/main/README.md
 
-**Issues**: https://github.com/jbcom/secretsync/issues
+**Issues**: https://github.com/extended-data-library/secretssync/issues

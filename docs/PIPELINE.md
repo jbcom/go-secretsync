@@ -361,7 +361,7 @@ jobs:
       
       - name: Install secretsync
         run: |
-          curl -sL https://github.com/jbcom/secretsync/releases/latest/download/secretsync_linux_amd64 \
+          curl -sL https://github.com/extended-data-library/secretssync/releases/latest/download/secretsync_linux_amd64 \
             -o /usr/local/bin/secretsync && chmod +x /usr/local/bin/secretsync
       
       - name: Run Pipeline
@@ -382,7 +382,7 @@ secrets-sync:
   stage: deploy
   image: alpine
   before_script:
-    - wget -O /usr/local/bin/secretsync https://github.com/jbcom/secretsync/releases/latest/download/secretsync_linux_amd64
+    - wget -O /usr/local/bin/secretsync https://github.com/extended-data-library/secretssync/releases/latest/download/secretsync_linux_amd64
     - chmod +x /usr/local/bin/secretsync
   script:
     - secretsync pipeline --config config.yaml

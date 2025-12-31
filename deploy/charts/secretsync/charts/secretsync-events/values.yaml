@@ -111,7 +111,7 @@ config: {}
 replicaCount: 1
 
 image:
-  repository: docker.io/jbcom/secretsync
+  repository: docker.io/extended-data-library/secretssync
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""

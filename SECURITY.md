@@ -19,7 +19,7 @@ Instead, please report security vulnerabilities through one of the following met
 
 ### GitHub Security Advisories (Preferred)
 
-1. Go to the [Security Advisories](https://github.com/jbcom/secretsync/security/advisories) page
+1. Go to the [Security Advisories](https://github.com/extended-data-library/secretssync/security/advisories) page
 2. Click "Report a vulnerability"
 3. Fill out the form with details about the vulnerability
 
